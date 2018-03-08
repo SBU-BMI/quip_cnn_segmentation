@@ -6,51 +6,71 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.data import Dataset
 
+import tensorflow.contrib.slim as slim
+from tensorflow.contrib.framework import arg_scope
+import random
+
+
 import glob
 import os
+import sys
 
 from config import get_config
+#from layers import *
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
 config = None
 
-def seg_model_fn(features, labels, mode, config=config):
-  #"""Create segmentation cnn model"""
+def normalize(layer):
+  return layer/127.5 - 1.
+
+def denormalize(layer):
+  return (layer + 1.)/2.
+
+def lrelu(x, leak=0.2):
+    f1 = 0.5 * (1 + leak)
+    f2 = 0.5 * (1 - leak)
+    return f1 * x + f2 * abs(x)
+
+def seg_model_fn(features, labels, mode, params=config):
+  """Create segmentation cnn model"""
+  name = None
   #with tf.variable_scope("learner", reuse=False) as sc:
     # Input Layer
     # Reshape X to 4-D tensor: [batch_size, width, height, channels]
-  input_layer = tf.reshape(features["x"], [-1, config.input_width, config.input_height, config.input_channel])
+  #input_layer = tf.reshape(features["x"], [-1, config.input_width, config.input_height, config.input_channel])
+  input_layer = tf.reshape(features, [-1, config.input_width, config.input_height, config.input_channel])
   
-  layer = conv2d(input_layer, 32, 3, 1, padding='SAME', scope="conv_0", name=name)
-  layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_1", name=name)
-  layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_2", name=name)
+  layer = slim.conv2d(input_layer, 32, 3, 1, padding='SAME', scope="conv_0")
+  layer = slim.conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_1")
+  layer = slim.conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_2")
   layr1 = layer;
 
   layer = slim.max_pool2d(layer, 3, 2, scope="pool_1")
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_3", name=name)
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_4", name=name)
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_5", name=name)
+  layer = slim.conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_3")
+  layer = slim.conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_4")
+  layer = slim.conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_5")
   layr2 = layer;
 
   layer = slim.max_pool2d(layer, 3, 2, scope="pool_2")
-  layer = conv2d(layer,128, 3, 1, padding='SAME', scope="conv_6", name=name)
-  layer = conv2d(layer,128, 3, 1, padding='SAME', scope="conv_7", name=name)
-  layer = conv2d(layer,128, 3, 1, padding='SAME', scope="conv_8", name=name)
+  layer = slim.conv2d(layer,128, 3, 1, padding='SAME', scope="conv_6")
+  layer = slim.conv2d(layer,128, 3, 1, padding='SAME', scope="conv_7")
+  layer = slim.conv2d(layer,128, 3, 1, padding='SAME', scope="conv_8")
   layer = slim.conv2d_transpose(layer, 32, 3, 2, padding='VALID', activation_fn=lrelu, normalizer_fn=slim.batch_norm, scope="deconv_0");
   layer = tf.concat([layer, layr2], 3)
 
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_9", name=name)
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_10", name=name)
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_11", name=name)
+  layer = slim.conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_9")
+  layer = slim.conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_10")
+  layer = slim.conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_11")
   layer = slim.conv2d_transpose(layer, 32, 3, 2, padding='VALID', activation_fn=lrelu, normalizer_fn=slim.batch_norm, scope="deconv_1");
   layer = tf.concat([layer, layr1], 3)
 
-  layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_12", name=name)
-  layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_13", name=name)
-  layer = conv2d(layer, 32, 3, 1, padding='SAME', normalizer_fn=None, scope="conv_14", name=name)
+  layer = slim.conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_12")
+  layer = slim.conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_13")
+  layer = slim.conv2d(layer, 32, 3, 1, padding='SAME', normalizer_fn=None, scope="conv_14")
 
-  logits= conv2d(layer,  1, 3, 1, padding='SAME', normalizer_fn=None, scope="conv_15", name=name)
+  logits= slim.conv2d(layer,  1, 3, 1, padding='SAME', normalizer_fn=None, scope="conv_15")
   output = tf.sigmoid(logits, name="sigmoid")
   #learner_vars = tf.contrib.framework.get_variables(sc)
 
@@ -107,10 +127,14 @@ def main(unused_argv):
   #train_data, train_labels = get_data(config.train_data_dir, config.train_mask_dir)
 #  eval_data, eval_labels = get_data(config.eval_data_dir, config.eval_mask_dir)
 
+  print (config)
+
   # Create the Estimator
   segmentation_estimator = tf.estimator.Estimator(
       model_fn=seg_model_fn,
-      model_dir="model/cnn_segmentation_model")
+      model_dir="model/cnn_segmentation_model",
+      params=config
+  )
 
   # Set up logging for predictions
   # Log the values in the "Softmax" tensor with label "probabilities"
@@ -131,32 +155,47 @@ def main(unused_argv):
   #    num_epochs=None,
   #    shuffle=True)
 
-  def train_input_fn(features, labels, batch_size):
+  def input_fn():
+    #test_filename_dataset = Dataset.list_files("%s/*.png"%config.train_data_dir)
+    #print (test_filename_dataset)
+    image_path_list = list(np.array(glob.glob(os.path.join(config.train_data_dir, '*.png'))))
+    image_paths_ds = Dataset.from_tensor_slices(tf.convert_to_tensor(image_path_list))
+    #print (image_paths_ds)
+    image_ds = image_paths_ds.map(lambda x: tf.to_float(tf.image.decode_png(tf.read_file(x))))
+
+    # Transformations go here
+
+
+    # Parallel list of png files in mask dir (should contain files with the same names
+    mask_path_list = [config.train_mask_dir + '/' + x.split('/')[-1] 
+                        for x in image_path_list]
+    mask_paths_ds = Dataset.from_tensor_slices(tf.convert_to_tensor(mask_path_list))
+    mask_ds = mask_paths_ds.map(lambda x: tf.to_float(tf.image.decode_png(tf.read_file(x))))
+
+    dataset = Dataset.zip((image_ds, mask_ds))
+
+    #return dataset
+    return dataset.make_one_shot_iterator().get_next()
 
     #print("data length is {}, mask length is {}".format(len(data_path_list), len(mask_path_list)) )
 
-    data_path_list = tf.convert_to_tensor(features)
-    mask_path_list = tf.convert_to_tensor(labels)
+    #data_path_list = tf.convert_to_tensor(features)
+    #mask_path_list = tf.convert_to_tensor(labels)
 
-    dataset = Dataset.from_tensor_slices((data_path_list,mask_path_list))
-    dataset = dataset.map(
-    lambda data, mask: tuple(tf.py_func(
-      _read_files_fn, [data, mask], [tf.float32, tf.float32])))
+    #dataset = Dataset.from_tensor_slices((data_path_list,mask_path_list))
+    #dataset = dataset.map(
+    #lambda data, mask: tuple(tf.py_func(
+    #  _read_files_fn, [data, mask], [tf.float32, tf.float32])))
+    #print (dataset) #Already broken
 
-    dataset = dataset.shuffle(1000).repeat().batch(batch_size)
-    return dataset.make_one_shot_iterator().get_next()
+    #dataset = dataset.shuffle(1000).repeat().batch(batch_size)
     
 
   # All png files in data dir
-  data_path_list = list(np.array(glob.glob(os.path.join(config.train_data_dir, '*.png'))))
 
-  # Parallel list of png files in mask dir (should contain files with the same names
-  #mask_path_list = ['/'.join(x.split('/')[:-2]) + '/' + \
-  #        config.synthetic_gt_dir + '/' + x.split('/')[-1] for x in data_path_list];
-  mask_path_list = [config.train_mask_dir + '/' + x.split('/')[-1] for x in data_path_list]
 
   segmentation_estimator.train(
-      input_fn=lambda:train_input_fn(data_path_list,mask_path_list,config.batch_size),
+      input_fn=input_fn,
       steps=20000)
       #hooks=[logging_hook])
 
@@ -172,5 +211,5 @@ def main(unused_argv):
 
 if __name__ == "__main__":
   config, unparsed = get_config()
-  tf.app.run()
+  tf.app.run(argv=[sys.argv[0]] + unparsed)
 
