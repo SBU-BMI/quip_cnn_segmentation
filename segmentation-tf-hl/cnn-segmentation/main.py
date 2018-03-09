@@ -39,8 +39,8 @@ def seg_model_fn(features, labels, mode, params=config):
   #with tf.variable_scope("learner", reuse=False) as sc:
     # Input Layer
     # Reshape X to 4-D tensor: [batch_size, width, height, channels]
-  #input_layer = tf.reshape(features["x"], [-1, config.input_width, config.input_height, config.input_channel])
-  input_layer = tf.reshape(features, [-1, config.input_width, config.input_height, config.input_channel])
+  #input_layer = tf.reshape(features, [-1, config.input_width, config.input_height, config.input_channel])
+  input_layer = tf.reshape(features, [-1, config.input_width, config.input_height, 1])
   
   layer = slim.conv2d(input_layer, 32, 3, 1, padding='SAME', scope="conv_0")
   layer = slim.conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_1")
@@ -89,7 +89,7 @@ def seg_model_fn(features, labels, mode, params=config):
         logits=logits, labels=tf.to_float(tf.greater(label,0))), [1, 2], name=name)
 
   # Calculate Loss (for both TRAIN and EVAL modes)
-  loss = learner_log_loss(logits, label, "learner_loss")
+  loss = learner_log_loss(logits, labels, "learner_loss")
 
   # Configure the Training Op (for TRAIN mode)
   if mode == tf.estimator.ModeKeys.TRAIN:
@@ -100,10 +100,10 @@ def seg_model_fn(features, labels, mode, params=config):
     elif config.optimizer == "adam":
       optim = tf.train.AdamOptimizer(config.learner_learning_rate)
     else:
-      raise Exception("[!] Unkown optimizer: {}".format(config.optimizer))
+      raise Exception("[!] Unknown optimizer: {}".format(config.optimizer))
     train_op = optim.minimize(
         loss,
-        var_list=learner_vars,
+        var_list=tf.trainable_variables(),
         global_step=tf.train.get_global_step())
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
@@ -161,18 +161,43 @@ def main(unused_argv):
     image_path_list = list(np.array(glob.glob(os.path.join(config.train_data_dir, '*.png'))))
     image_paths_ds = Dataset.from_tensor_slices(tf.convert_to_tensor(image_path_list))
     #print (image_paths_ds)
-    image_ds = image_paths_ds.map(lambda x: tf.to_float(tf.image.decode_png(tf.read_file(x))))
 
-    # Transformations go here
 
+    image_ds = image_paths_ds.map(
+      lambda x: tf.to_float(
+        tf.image.crop_to_bounding_box(
+          tf.image.rgb_to_grayscale(
+            tf.image.decode_png(
+              tf.read_file(x)
+            )
+             #TODO: add randomness to crop offsets...
+          ), 0, 0, config.input_height, config.input_width #Crop to input dims
+        )
+      )
+    )
 
     # Parallel list of png files in mask dir (should contain files with the same names
     mask_path_list = [config.train_mask_dir + '/' + x.split('/')[-1] 
                         for x in image_path_list]
     mask_paths_ds = Dataset.from_tensor_slices(tf.convert_to_tensor(mask_path_list))
-    mask_ds = mask_paths_ds.map(lambda x: tf.to_float(tf.image.decode_png(tf.read_file(x))))
+    mask_ds = mask_paths_ds.map(lambda x: 
+      tf.to_float(
+        tf.image.crop_to_bounding_box(
+          tf.image.rgb_to_grayscale(
+            tf.image.decode_png(
+              tf.read_file(x)
+            )
+          ), 0, 0, config.input_height, config.input_width #Crop same rect as input
+        )
+      )
+    )
 
     dataset = Dataset.zip((image_ds, mask_ds))
+
+    print (dataset)
+
+    dataset = dataset.batch (config.batch_size)
+    #dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(config.batch_size))
 
     #return dataset
     return dataset.make_one_shot_iterator().get_next()
