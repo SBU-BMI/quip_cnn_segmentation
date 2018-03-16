@@ -40,7 +40,12 @@ def seg_model_fn(features, labels, mode, params=config):
     # Input Layer
     # Reshape X to 4-D tensor: [batch_size, width, height, channels]
   #input_layer = tf.reshape(features, [-1, config.input_width, config.input_height, config.input_channel])
-  input_layer = tf.reshape(features, [-1, config.input_width, config.input_height, 1])
+
+  #input_layer = tf.placeholder(
+        #tf.float32, [None, self.input_height, self.input_width, self.input_channel])
+  #input_layer.set_shape([None, self.input_width, self.input_height, self.input_channel])
+
+  input_layer = tf.reshape(features, [-1, config.input_width, config.input_height, config.input_channel])
   
   layer = slim.conv2d(input_layer, 32, 3, 1, padding='SAME', scope="conv_0")
   layer = slim.conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_1")
@@ -72,7 +77,6 @@ def seg_model_fn(features, labels, mode, params=config):
 
   logits= slim.conv2d(layer,  1, 3, 1, padding='SAME', normalizer_fn=None, scope="conv_15")
   output = tf.sigmoid(logits, name="sigmoid")
-  #learner_vars = tf.contrib.framework.get_variables(sc)
 
   predictions = {
       # Generate predictions (for PREDICT and EVAL mode)
@@ -84,12 +88,9 @@ def seg_model_fn(features, labels, mode, params=config):
   if mode == tf.estimator.ModeKeys.PREDICT:
     return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
-  def learner_log_loss(logits, label, name):
-    return tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(
-        logits=logits, labels=tf.to_float(tf.greater(label,0))), [1, 2], name=name)
-
-  # Calculate Loss (for both TRAIN and EVAL modes)
-  loss = learner_log_loss(logits, labels, "learner_loss")
+  loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+           #logits=logits, labels=tf.to_float(tf.greater(labels,0))), axis=[1, 2], name="loss")
+           logits=logits, labels=tf.to_float(tf.greater(labels,0))), name="loss")
 
   # Configure the Training Op (for TRAIN mode)
   if mode == tf.estimator.ModeKeys.TRAIN:
@@ -165,13 +166,15 @@ def main(unused_argv):
 
     image_ds = image_paths_ds.map(
       lambda x: tf.to_float(
-        tf.image.crop_to_bounding_box(
-          tf.image.rgb_to_grayscale(
-            tf.image.decode_png(
-              tf.read_file(x)
-            )
-             #TODO: add randomness to crop offsets...
-          ), 0, 0, config.input_height, config.input_width #Crop to input dims
+        tf.image.per_image_standardization( #Normalize data between -1 and 1
+          tf.image.crop_to_bounding_box(
+           # tf.image.rgb_to_grayscale(
+              tf.image.decode_png(
+                tf.read_file(x)
+             # )
+               #TODO: add randomness to crop offsets...
+            ), 0, 0, config.input_height, config.input_width #Crop to input dims
+          )
         )
       )
     )
@@ -182,12 +185,14 @@ def main(unused_argv):
     mask_paths_ds = Dataset.from_tensor_slices(tf.convert_to_tensor(mask_path_list))
     mask_ds = mask_paths_ds.map(lambda x: 
       tf.to_float(
-        tf.image.crop_to_bounding_box(
-          tf.image.rgb_to_grayscale(
-            tf.image.decode_png(
-              tf.read_file(x)
-            )
-          ), 0, 0, config.input_height, config.input_width #Crop same rect as input
+        tf.image.per_image_standardization( #Normalize data between -1 and 1
+          tf.image.crop_to_bounding_box(
+          #  tf.image.rgb_to_grayscale(
+              tf.image.decode_png(
+                tf.read_file(x)
+             # )
+            ), 0, 0, config.input_height, config.input_width #Crop same rect as input
+          )
         )
       )
     )
@@ -196,7 +201,7 @@ def main(unused_argv):
 
     print (dataset)
 
-    dataset = dataset.batch (config.batch_size)
+    dataset = dataset.batch (config.batch_size).shuffle (buffer_size=1000).repeat()
     #dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(config.batch_size))
 
     #return dataset
