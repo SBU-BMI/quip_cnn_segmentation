@@ -149,14 +149,6 @@ def main(unused_argv):
   #print ("data shape ", train_data.shape)
   #print ("data label shape ", train_label.shape)
 
-  # Train the model
-  #train_input_fn = tf.estimator.inputs.numpy_input_fn(
-  #    x={"x": train_data},
-  #    y=train_labels,
-  #    batch_size=100,
-  #    num_epochs=None,
-  #    shuffle=True)
-
   def random_crop_image_and_labels(image, label, h, w, is_grayscale):
     combined = tf.concat([image, label], axis=2)
     if is_grayscale:
@@ -240,7 +232,7 @@ def main(unused_argv):
     return rv
 
 
-  #Debug input_fn
+  #Use this code to debug input_fn
 #  images, labels = input_fn()
 #  with tf.Session() as sess:
 #    img, label = sess.run ([images, labels])
@@ -265,11 +257,11 @@ def main(unused_argv):
 
     image_ds = image_paths_ds.map(
       lambda x: tf.to_float(
-#        tf.image.per_image_standardization( #Normalize data between -1 and 1
+            normalize(
               tf.image.decode_png(
                 tf.read_file(x)
           )
-#        )
+        )
       )
     )
 
@@ -281,11 +273,11 @@ def main(unused_argv):
 
     mask_ds = mask_paths_ds.map(lambda x: 
       tf.to_float(
-#        tf.image.per_image_standardization( #Normalize data between -1 and 1
+            normalize(
               tf.image.decode_png(
                 tf.read_file(x)
           )
-#        )
+        )
       )
     )
 
