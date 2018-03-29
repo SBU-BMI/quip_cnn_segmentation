@@ -18,15 +18,16 @@ data_arg = add_argument_group('Data')
 data_arg.add_argument('--input_height', type=int, default=75)
 data_arg.add_argument('--input_width', type=int, default=75)
 data_arg.add_argument('--input_channel', type=int, default=3)
-data_arg.add_argument('--train_data_dir', type=str, default="../../segmentation-tensorflow/data/nuclei/image")
-data_arg.add_argument('--train_mask_dir', type=str, default="../../segmentation-tensorflow/data/nuclei/mask")
+data_arg.add_argument('--train_data_dir', type=str, default="../../segmentation-tensorflow/data/nuclei/image/just_one")
+data_arg.add_argument('--train_mask_dir', type=str, default="../../segmentation-tensorflow/data/nuclei/mask/just_one")
 data_arg.add_argument('--eval_data_dir', type=str, default="../../segmentation-tensorflow/data/nuclei/image")
 data_arg.add_argument('--eval_mask_dir', type=str, default="../../segmentation-tensorflow/data/nuclei/mask")
 
 # Training
 train_arg = add_argument_group('Training')
+train_arg.add_argument('--batch_size', type=int, default=10, help='')
+train_arg.add_argument('--learner_learning_rate', type=float, default=0.001, help='')
 train_arg.add_argument('--optimizer', type=str, default='moment', choices=['adam', 'moment', 'sgd'], help='')
-train_arg.add_argument('--learner_learning_rate', type=float, default=0.0001, help='')
 train_arg.add_argument('--random_seed', type=int, default=123, help='')
 
 
@@ -69,7 +70,6 @@ train_arg.add_argument('--K_d', type=int, default=0, help='')
 train_arg.add_argument('--K_g', type=int, default=2, help='')
 train_arg.add_argument('--K_l', type=int, default=4, help='')
 
-train_arg.add_argument('--batch_size', type=int, default=68, help='')
 train_arg.add_argument('--buffer_size', type=int, default=25600, help='')
 train_arg.add_argument('--refiner_learning_rate', type=float, default=0.00001, help='')
 train_arg.add_argument('--discrim_learning_rate', type=float, default=0.00001, help='')

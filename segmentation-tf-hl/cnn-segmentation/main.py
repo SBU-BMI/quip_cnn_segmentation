@@ -10,6 +10,7 @@ import tensorflow.contrib.slim as slim
 from tensorflow.contrib.framework import arg_scope
 import random
 
+from matplotlib import pyplot as plt
 
 import glob
 import os
@@ -156,24 +157,51 @@ def main(unused_argv):
   #    num_epochs=None,
   #    shuffle=True)
 
+  def random_crop_image_and_labels(image, label, h, w, is_grayscale):
+    combined = tf.concat([image, label], axis=2)
+    if is_grayscale:
+      combined_crop = tf.random_crop(combined, size=[h, w, 2])
+    else:
+      combined_crop = tf.random_crop(combined, size=[h, w, 4])
+    combined_crop = tf.image.random_flip_left_right(combined_crop)
+
+    num_rot = int(random.random() * 4)
+    combined_crop = tf.image.rot90(image=combined_crop, k=num_rot)
+
+    if is_grayscale:
+      cropped_image = combined_crop[:, :, :1]
+      cropped_label = combined_crop[:, :, 1:]
+      cropped_image.set_shape([h, w, 1])
+      cropped_label.set_shape([h, w, 1])
+    else:
+      cropped_image = combined_crop[:, :, :3]
+      cropped_label = combined_crop[:, :, 3:]
+      cropped_image.set_shape([h, w, 3])
+      cropped_label.set_shape([h, w, 1])
+
+    return cropped_image, cropped_label
+
+
+  def normalize(layer):
+    return layer/127.5 - 1.
+
+
   def input_fn():
-    #test_filename_dataset = Dataset.list_files("%s/*.png"%config.train_data_dir)
-    #print (test_filename_dataset)
+    #print ("Beginning of input_fn")
+
     image_path_list = list(np.array(glob.glob(os.path.join(config.train_data_dir, '*.png'))))
-    image_paths_ds = Dataset.from_tensor_slices(tf.convert_to_tensor(image_path_list))
-    #print (image_paths_ds)
+    image_path_tensor = tf.convert_to_tensor(image_path_list)
+
+    image_paths_ds = Dataset.from_tensor_slices(image_path_tensor)
 
 
     image_ds = image_paths_ds.map(
-      lambda x: tf.to_float(
-        tf.image.per_image_standardization( #Normalize data between -1 and 1
-          tf.image.crop_to_bounding_box(
-           # tf.image.rgb_to_grayscale(
+      lambda x: 
+    #    tf.image.per_image_standardization( #Normalize data between -1 and 1
+        normalize(
+          tf.to_float(
               tf.image.decode_png(
                 tf.read_file(x)
-             # )
-               #TODO: add randomness to crop offsets...
-            ), 0, 0, config.input_height, config.input_width #Crop to input dims
           )
         )
       )
@@ -182,59 +210,104 @@ def main(unused_argv):
     # Parallel list of png files in mask dir (should contain files with the same names
     mask_path_list = [config.train_mask_dir + '/' + x.split('/')[-1] 
                         for x in image_path_list]
-    mask_paths_ds = Dataset.from_tensor_slices(tf.convert_to_tensor(mask_path_list))
+    mask_path_tensor = tf.convert_to_tensor (mask_path_list)
+    mask_paths_ds = Dataset.from_tensor_slices(mask_path_tensor)
+
     mask_ds = mask_paths_ds.map(lambda x: 
-      tf.to_float(
-        tf.image.per_image_standardization( #Normalize data between -1 and 1
-          tf.image.crop_to_bounding_box(
-          #  tf.image.rgb_to_grayscale(
+    #  tf.image.per_image_standardization( #Normalize data between -1 and 1
+      normalize(
+        tf.to_float(
               tf.image.decode_png(
                 tf.read_file(x)
-             # )
-            ), 0, 0, config.input_height, config.input_width #Crop same rect as input
           )
         )
       )
     )
 
     dataset = Dataset.zip((image_ds, mask_ds))
-
-    print (dataset)
+  
+    dataset = dataset.map(
+      lambda x, y: random_crop_image_and_labels(x, y, config.input_height, config.input_width, config.input_channel == 1)
+    )
 
     dataset = dataset.batch (config.batch_size).shuffle (buffer_size=1000).repeat()
-    #dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(config.batch_size))
 
-    #return dataset
+    rv = dataset.make_one_shot_iterator().get_next()
+
+    #print ("Dumping return val from input function")
+    #print (rv)
+
+    return rv
+
+
+  #Debug input_fn
+#  images, labels = input_fn()
+#  with tf.Session() as sess:
+#    img, label = sess.run ([images, labels])
+#    print (img.shape, label.shape)
+#    print (img[0])
+#    plt.imshow(img[0])
+#    plt.show()
+
+#    mask = np.array(label[0]).reshape((140,140))
+#    plt.imshow(mask)
+#    plt.show()
+#  return
+
+
+
+  def eval_input_fn():
+    image_path_list = list(np.array(glob.glob(os.path.join(config.train_data_dir, '*.png'))))
+    image_path_tensor = tf.convert_to_tensor(image_path_list)
+
+    image_paths_ds = Dataset.from_tensor_slices(image_path_tensor)
+
+
+    image_ds = image_paths_ds.map(
+      lambda x: tf.to_float(
+#        tf.image.per_image_standardization( #Normalize data between -1 and 1
+              tf.image.decode_png(
+                tf.read_file(x)
+          )
+#        )
+      )
+    )
+
+    # Parallel list of png files in mask dir (should contain files with the same names
+    mask_path_list = [config.train_mask_dir + '/' + x.split('/')[-1] 
+                        for x in image_path_list]
+    mask_path_tensor = tf.convert_to_tensor (mask_path_list)
+    mask_paths_ds = Dataset.from_tensor_slices(mask_path_tensor)
+
+    mask_ds = mask_paths_ds.map(lambda x: 
+      tf.to_float(
+#        tf.image.per_image_standardization( #Normalize data between -1 and 1
+              tf.image.decode_png(
+                tf.read_file(x)
+          )
+#        )
+      )
+    )
+
+    dataset = Dataset.zip((image_ds, mask_ds))
+  
+    dataset = dataset.map(
+      lambda x, y: random_crop_image_and_labels(x, y, config.input_height, config.input_width, config.input_channel == 1)
+    )
+
+    dataset = dataset.batch (config.batch_size)
+
     return dataset.make_one_shot_iterator().get_next()
 
-    #print("data length is {}, mask length is {}".format(len(data_path_list), len(mask_path_list)) )
-
-    #data_path_list = tf.convert_to_tensor(features)
-    #mask_path_list = tf.convert_to_tensor(labels)
-
-    #dataset = Dataset.from_tensor_slices((data_path_list,mask_path_list))
-    #dataset = dataset.map(
-    #lambda data, mask: tuple(tf.py_func(
-    #  _read_files_fn, [data, mask], [tf.float32, tf.float32])))
-    #print (dataset) #Already broken
-
-    #dataset = dataset.shuffle(1000).repeat().batch(batch_size)
-    
-
-  # All png files in data dir
 
 
   segmentation_estimator.train(
       input_fn=input_fn,
-      steps=20000)
+      steps=None) # Use None for unlimited steps
       #hooks=[logging_hook])
 
-#  # Evaluate the model and print results
-#  eval_input_fn = tf.estimator.inputs.numpy_input_fn(
-#      x={"x": eval_data},
-#      y=eval_labels,
-#      num_epochs=1,
-#      shuffle=False)
+  # Evaluate the model and print results
+
 #  eval_results = segmentation_estimator.evaluate(input_fn=eval_input_fn)
 #  print(eval_results)
 
