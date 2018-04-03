@@ -8,10 +8,10 @@ DATASET=BC_069_0_1
 GPU=1
 INDEX=0
 #BC_056_0_1
-mkdir segmentation_test_images_0
-cp ./tiles/${DATASET}.svs/*.png segmentation_test_images_0/
+mkdir segmentation_test_images_${INDEX}
+cp ./tiles/${DATASET}.svs/*.png segmentation_test_images_${INDEX}/
 python resize_list.py ${INDEX}
-cp ./tiles/${DATASET}.svs/image_resize_list.txt segmentation_test_images_0/
+cp ./tiles/${DATASET}.svs/image_resize_list.txt segmentation_test_images_${INDEX}/
 
 #cp ./segmentation_test_images/${DATASET}/*.png segmentation_test_images/
 #cp ./segmentation_test_images/${DATASET}/image_resize_list.txt segmentation_test_images/
