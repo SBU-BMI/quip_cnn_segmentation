@@ -10,6 +10,6 @@ How to use?
 3.2_test_seer_paral_release.sh is to run segmentation on tiles. For segmenting different slides, the following parameters may be changed 
 DATASET=BC_069_0_1   #the name of the slide
 GPU=1   #which GPU to use
-INDEX=0 #temporary folder name: segmentation_test_images_${INDEX}. When segmenting multiple slides at the same time, the INDEX should be different so that the results are saved in different folders.
+
 
 
