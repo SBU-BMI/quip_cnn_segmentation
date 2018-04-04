@@ -7,10 +7,12 @@ Copy the envireonment:
 How to use?
 1.seer_slides.txt has locations of wholeslides that are going to be processed. There are 20 slides. Each of them takes about 8-10 hours for segmenting.
 2.1_save_svs_to_tiles.sh save the wholslide image to 4000*4000 tiles, two areguments are needed. The first is the location of one wholeslide image, the second is the folder to save, using './tiles'.
+Using 'nohup bash 1_save_svs_to_tiles.sh &' to run it.
 3.2_test_seer_paral_release.sh is to run segmentation on tiles. 
 For segmenting different slides, the following parameters should be changed for each slide. 
 DATASET=BC_069_0_1 #the name of the slide without '.svs'
 GPU=1 #which GPU to use 
+Using 'nohup bash 2_test_seer_paral_release.sh &' to run it.
 
 
 
