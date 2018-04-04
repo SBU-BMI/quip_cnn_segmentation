@@ -3,15 +3,17 @@
 # Set MODEL as one of the folders in logs/
 # for example:
 # MODEL=generative_2017-11-15_14-29-58
+
+DATASET=BC_070_0_1
+GPU=0
+
+
 MODEL=generative_2018-01-02_23-21-39
-DATASET=BC_069_0_1
-GPU=1
-INDEX=0
 #BC_056_0_1
-mkdir segmentation_test_images_${INDEX}
-cp ./tiles/${DATASET}.svs/*.png segmentation_test_images_${INDEX}/
-python resize_list.py ${INDEX}
-cp ./tiles/${DATASET}.svs/image_resize_list.txt segmentation_test_images_${INDEX}/
+mkdir segmentation_test_images_${DATASET}
+cp ./tiles/${DATASET}.svs/*.png segmentation_test_images_${DATASET}/
+python resize_list.py ${DATASET}
+cp ./tiles/${DATASET}.svs/image_resize_list.txt segmentation_test_images_${DATASET}/
 
 #cp ./segmentation_test_images/${DATASET}/*.png segmentation_test_images/
 #cp ./segmentation_test_images/${DATASET}/image_resize_list.txt segmentation_test_images/
@@ -20,7 +22,7 @@ cp ./tiles/${DATASET}.svs/image_resize_list.txt segmentation_test_images_${INDEX
 CUDA_VISIBLE_DEVICES=${GPU} \
 LD_LIBRARY_PATH="/home/lehhou/my_libc_env/lib/x86_64-linux-gnu/:/home/lehhou/my_libc_env/usr/lib64/:$LD_LIBRARY_PATH" \
         /home/lehhou/my_libc_env/lib/x86_64-linux-gnu/ld-2.17.so /home/lehhou/anaconda2/bin/python -u main.py \
-        --is_train=False --load_path=${MODEL} --mao_step_size=25 --mao_index=${INDEX} --mao_file=0&> log.test.seerpara${INDEX}_last10.txt
+        --is_train=False --load_path=${MODEL} --mao_step_size=25 --mao_index=0 --mao_file=${DATASET}&> log.wholeslide${DATASET}.txt
 #CUDA_VISIBLE_DEVICES=${GPU} ~/anaconda2/bin/python -u main.py \
         #--is_train=False --load_path=${MODEL} &> log.test.txt
 
