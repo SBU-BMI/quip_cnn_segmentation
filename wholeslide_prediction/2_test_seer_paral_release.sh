@@ -22,7 +22,7 @@ cp ./tiles/${DATASET}.svs/image_resize_list.txt segmentation_test_images_${DATAS
 CUDA_VISIBLE_DEVICES=${GPU} \
 LD_LIBRARY_PATH="/home/lehhou/my_libc_env/lib/x86_64-linux-gnu/:/home/lehhou/my_libc_env/usr/lib64/:$LD_LIBRARY_PATH" \
         /home/lehhou/my_libc_env/lib/x86_64-linux-gnu/ld-2.17.so /home/lehhou/anaconda2/bin/python -u main.py \
-        --is_train=False --load_path=${MODEL} --mao_step_size=25 --mao_index=0 --mao_file=${DATASET}&> log.wholeslide${DATASET}.txt
+        --is_train=False --load_path=${MODEL} --mao_step_size=10000 --mao_index=0 --mao_file=${DATASET}&> log.wholeslide${DATASET}.txt
 #CUDA_VISIBLE_DEVICES=${GPU} ~/anaconda2/bin/python -u main.py \
         #--is_train=False --load_path=${MODEL} &> log.test.txt
 
