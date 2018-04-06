@@ -276,7 +276,7 @@ class Trainer(object):
       print 'Tiles loaded.', len(X);
       yield X, F, R;
 
-  def cnn_pred_mask(self, segmentation_folder):
+  def cnn_pred_mask_ori(self, segmentation_folder):
     PS = self.PS;
     step_size = self.config.pred_step_size;
     gsm = self.gkern(PS, self.config.pred_gkern_sig);
@@ -329,6 +329,70 @@ class Trainer(object):
                 pred_m[x:x+PS, y:y+PS] += net_outputs[yind, :, :].transpose() * gsm;
                 num_m[x:x+PS, y:y+PS] += gsm;
                 yind += 1;
+        
+        print('size:({},{},{}) time: {}'.format(img.shape[0], img.shape[1],img.shape[2],str(time_mao0-time.time())))
+        pred_m /= num_m;
+        if abs(resize_f - 1) >= 0.001:
+          pred_m = misc.imresize(pred_m, 1.0/resize_f);
+        imwrite(outf, pred_m);
+        
+  def cnn_pred_mask(self, segmentation_folder):
+    PS = self.PS;
+    step_size = self.config.pred_step_size;
+    gsm = self.gkern(PS, self.config.pred_gkern_sig);
+    #X, F, R = self.load_data(segmentation_folder);
+    counter_mao=0
+    for X, F, R in self.load_data_group_mao(segmentation_folder,10):
+      print('counter_mao: %d'%(counter_mao))
+      counter_mao+=1
+      print 'Scaling factor {}'.format(self.config.pred_scaling);
+      for im_id in range(len(X)):
+        time_mao0=time.time()
+        img = X[im_id];
+        outf = segmentation_folder + '/' + F[im_id][:-4] + "_pred.png";
+        if os.path.exists(outf):
+          print('skip: %s'%(F[im_id][:-4] + "_pred.png"))
+          continue
+        else:
+          print 'Segmenting {}'.format(F[im_id]);
+        resize_f = R[im_id] * self.config.pred_scaling;
+  
+        pred_m = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32);
+        num_m = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32);
+        '''
+        for mir in range(2):
+          img = img[::-1, :, :]
+          pred_m = pred_m[::-1, :];
+          num_m = num_m[::-1, :];
+          for rot in range(4):
+            img = np.swapaxes(img, 0, 1)[::-1, :, :];
+            pred_m = np.swapaxes(pred_m, 0, 1)[::-1, :];
+            num_m = np.swapaxes(num_m, 0, 1)[::-1, :];
+        '''
+        #img = np.swapaxes(img, 0, 1);
+        #pred_m = np.swapaxes(pred_m, 0, 1);
+        #num_m = np.swapaxes(num_m, 0, 1);
+        for x in range(0, pred_m.shape[0]-PS+1, step_size) + [pred_m.shape[0]-PS]:
+          nimg = len(range(0, pred_m.shape[1]-PS+1, step_size) + [pred_m.shape[1]-PS]);
+          net_inputs = np.zeros(shape=(nimg, img.shape[2], PS, PS), dtype=np.float32);
+          yind = 0;
+          for y in range(0, pred_m.shape[1]-PS+1, step_size) + [pred_m.shape[1]-PS]:
+            net_inputs[yind, :, :, :] = img[x:x+PS, y:y+PS, :].transpose();
+            yind += 1;
+
+          feed_dict = {
+            self.model.test_patch_normalized: np.transpose(net_inputs, [0,2,3,1]),
+          }
+
+          res_discrim = self.model.test_learner_patch(self.sess, feed_dict, None, with_output=True)
+
+          net_outputs = res_discrim['output']
+          net_outputs = np.squeeze(net_outputs, axis=3);
+          yind = 0;
+          for y in range(0, pred_m.shape[1]-PS+1, step_size) + [pred_m.shape[1]-PS]:
+            pred_m[x:x+PS, y:y+PS] += net_outputs[yind, :, :].transpose() * gsm;
+            num_m[x:x+PS, y:y+PS] += gsm;
+            yind += 1;
         
         print('size:({},{},{}) time: {}'.format(img.shape[0], img.shape[1],img.shape[2],str(time_mao0-time.time())))
         pred_m /= num_m;
