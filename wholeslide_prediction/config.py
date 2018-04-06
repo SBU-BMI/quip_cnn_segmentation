@@ -62,7 +62,7 @@ train_arg.add_argument('--learner_learning_rate', type=float, default=0.0001, he
 train_arg.add_argument('--checkpoint_secs', type=int, default=300, help='')
 train_arg.add_argument('--max_grad_norm', type=float, default=50, help='')
 train_arg.add_argument('--optimizer', type=str, default='moment', choices=['adam', 'moment', 'sgd'], help='')
-train_arg.add_argument('--pred_step_size', type=int, default=37, help='')
+train_arg.add_argument('--pred_step_size', type=int, default=65, help='')
 train_arg.add_argument('--pred_scaling', type=float, default=1.0, help='')
 train_arg.add_argument('--pred_gkern_sig', type=float, default=0.5, help='')
 
