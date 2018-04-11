@@ -14,8 +14,9 @@ DATASET=BC_069_0_1 #the name of the slide without '.svs'
 GPU=1 #which GPU to use 
 Using 'nohup bash 2_test_seer_paral_release.sh &' to run it.
 4.3_bi_csv_json.sh is to binarize the CNN prediction, generate polygon and json files.
-SLIDENAME and SLIDEPATH need to be changed for each slide.
+SLIDENAME and SLIDEPATH should be changed for each slide.
 5.In binarize_pred.py line 16, cpp='/nfs/data01/shared/mazhao6/earth/yi_ori/pathomics_analysis/nucleusSegmentation/app/computeFeaturesCombined' is the path for Yi's code, you should change this path according to your environment.
+6. The final results for each slide are in ./results/{SLIDENAME}/csv. For each RGB tile, there should be a .json file and a .csv file in this folder. Please make sure the number of these files are correct. Then copy these folders to eagle cluster. For each slide, the directory of this folder on eagle and the directory of the original slide is needed for showing them on the caMicroscope.
 
 
 
