@@ -13,6 +13,9 @@ For segmenting different slides, the following parameters should be changed for 
 DATASET=BC_069_0_1 #the name of the slide without '.svs'
 GPU=1 #which GPU to use 
 Using 'nohup bash 2_test_seer_paral_release.sh &' to run it.
+4.3_bi_csv_json.sh is to binarize the CNN prediction, generate polygon and json files.
+SLIDENAME and SLIDEPATH need to be changed for each slide.
+5.In binarize_pred.py line 16, cpp='/nfs/data01/shared/mazhao6/earth/yi_ori/pathomics_analysis/nucleusSegmentation/app/computeFeaturesCombined' is the path for Yi's code, you should change this path according to your environment.
 
 
 
