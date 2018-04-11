@@ -12,10 +12,10 @@ INDEX=0
 STEP=10000
 MODEL=generative_2018-01-02_23-21-39
 #BC_056_0_1
-#mkdir segmentation_test_images_${DATASET}
-#cp ./tiles/${DATASET}.svs/*.png segmentation_test_images_${DATASET}/
-#python resize_list.py ${DATASET}
-#cp ./tiles/${DATASET}.svs/image_resize_list.txt segmentation_test_images_${DATASET}/
+mkdir segmentation_test_images_${DATASET}
+cp ./tiles/${DATASET}.svs/*.png segmentation_test_images_${DATASET}/
+python resize_list.py ${DATASET}
+cp ./tiles/${DATASET}.svs/image_resize_list.txt segmentation_test_images_${DATASET}/
 
 #cp ./segmentation_test_images/${DATASET}/*.png segmentation_test_images/
 #cp ./segmentation_test_images/${DATASET}/image_resize_list.txt segmentation_test_images/
