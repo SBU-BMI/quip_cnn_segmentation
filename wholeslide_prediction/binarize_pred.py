@@ -31,11 +31,11 @@ for filei in files:
     filei1=filei[0:len(filei)-9]+'.png'
     name=filei1
     name1=name[0:len(name)-3]+'csv'
-    if not os.path.isfile(csvsavepath+'/'+name1[0:len(name1)-4]+'-features.csv') or os.path.getsize(csvsavepath+'/'+name1[0:len(name1)-4]+'-features.csv')<3000000:
-      
+    if not os.path.isfile(csvsavepath+'/'+name1[0:len(name1)-4]+'-features.csv'):
+      rgb=cv2.imread(rgbpath+filei1)
       img=cv2.imread(path1+filei)
-      if img.shape[0]>4000:
-        img=cv2.resize(img,(4000,4000))
+      if img.shape[0]>4000 or img.shape[1]>4000:
+        img=cv2.resize(img,(rgb.shape[1],rgb.shape[0]))
       
       ret3,th3 = cv2.threshold(img,96,255,cv2.THRESH_BINARY)#+cv.THRESH_OTSU
       #cv2.imwrite('test1.png',th3)
@@ -62,7 +62,7 @@ for filei in files:
         kernel = np.ones((7,7),np.uint8)
         erosion = cv2.erode(img1,kernel,iterations = 1)
         dilation = cv2.dilate(erosion,kernel,iterations = 1)
-        rgb=cv2.imread(rgbpath+RGBname)
+        
         if dilation.shape!=rgb.shape:
           dilation=cv2.resize(dilation,(rgb.shape[1],rgb.shape[0]))
           ret3,dilation = cv2.threshold(dilation,96,255,cv2.THRESH_BINARY)
@@ -74,7 +74,7 @@ for filei in files:
           kernel = np.ones((20,20),np.uint8)
           erosion = cv2.erode(img1,kernel,iterations = 1)
           dilation = cv2.dilate(erosion,kernel,iterations = 1)
-          rgb=cv2.imread(rgbpath+RGBname)
+          
           if dilation.shape!=rgb.shape:
             dilation=cv2.resize(dilation,(rgb.shape[1],rgb.shape[0]))
             ret3,dilation = cv2.threshold(dilation,96,255,cv2.THRESH_BINARY)
