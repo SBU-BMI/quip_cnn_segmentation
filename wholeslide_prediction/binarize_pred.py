@@ -57,6 +57,38 @@ for filei in files:
       print(colx)
       print(rowy)
       os.system(cpp+' '+rgbpath+RGBname+' '+maskpath+name+' Y'+' '+name1+' '+str(colx)+' '+str(rowy)+' \n mv '+name1+' '+csvsavepath+'/'+name1[0:len(name1)-4]+'-features.csv'+'\n rm -r '+name1)
+      if not os.path.isfile(csvsavepath+'/'+name1[0:len(name1)-4]+'-features.csv'):
+        img1=cv2.imread(savepath+filei1)
+        kernel = np.ones((7,7),np.uint8)
+        erosion = cv2.erode(img1,kernel,iterations = 1)
+        dilation = cv2.dilate(erosion,kernel,iterations = 1)
+        rgb=cv2.imread(rgbpath+RGBname)
+        if dilation.shape!=rgb.shape:
+          dilation=cv2.resize(dilation,(rgb.shape[1],rgb.shape[0]))
+          ret3,dilation = cv2.threshold(dilation,96,255,cv2.THRESH_BINARY)
+        print(dilation.shape)
+        cv2.imwrite(savepath+filei1,dilation[:,:,0])
+        os.system(cpp+' '+rgbpath+RGBname+' '+maskpath+name+' Y'+' '+name1+' '+str(colx)+' '+str(rowy)+' \n mv '+name1+' '+csvsavepath+'/'+name1[0:len(name1)-4]+'-features.csv'+'\n rm -r '+name1)
+        if not os.path.isfile(csvsavepath+'/'+name1[0:len(name1)-4]+'-features.csv'):
+          img1=cv2.imread(savepath+filei1)
+          kernel = np.ones((20,20),np.uint8)
+          erosion = cv2.erode(img1,kernel,iterations = 1)
+          dilation = cv2.dilate(erosion,kernel,iterations = 1)
+          rgb=cv2.imread(rgbpath+RGBname)
+          if dilation.shape!=rgb.shape:
+            dilation=cv2.resize(dilation,(rgb.shape[1],rgb.shape[0]))
+            ret3,dilation = cv2.threshold(dilation,96,255,cv2.THRESH_BINARY)
+            
+          print(dilation.shape)
+          cv2.imwrite(savepath+filei1,dilation[:,:,0])
+          os.system(cpp+' '+rgbpath+RGBname+' '+maskpath+name+' Y'+' '+name1+' '+str(colx)+' '+str(rowy)+' \n mv '+name1+' '+csvsavepath+'/'+name1[0:len(name1)-4]+'-features.csv'+'\n rm -r '+name1)
+        
+          if not os.path.isfile(csvsavepath+'/'+name1[0:len(name1)-4]+'-features.csv'):
+            print('####################################################################################')
+            print('lost tile:'+savepath+filei1)
+          
+        
+      
     else:
       print('skip '+csvsavepath+'/'+name1[0:len(name1)-4]+'-features.csv')
   
