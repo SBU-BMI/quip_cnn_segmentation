@@ -34,21 +34,6 @@ def lrelu(x, leak=0.2):
     f2 = 0.5 * (1 - leak)
     return f1 * x + f2 * abs(x)
 
-def conv2d(inputs, num_outputs, kernel_size, stride,
-           padding='SAME',
-           layer_dict={}, activation_fn=lrelu,
-           weights_initializer=tf.contrib.layers.xavier_initializer(),
-           normalizer_fn=slim.batch_norm,
-           scope=None, **kargv):
-  outputs = slim.conv2d(
-      inputs, num_outputs, kernel_size,
-      stride, activation_fn=activation_fn,
-      padding=padding,
-      normalizer_fn=normalizer_fn,
-      weights_initializer=weights_initializer,
-      biases_initializer=tf.zeros_initializer(dtype=tf.float32), scope=scope, **kargv)
-  return outputs
-
 def seg_model_fn(features, labels, mode, params=config):
   """Create segmentation cnn model"""
   name = None
@@ -62,44 +47,44 @@ def seg_model_fn(features, labels, mode, params=config):
   #input_layer.set_shape([None, self.input_width, self.input_height, self.input_channel])
 
   input_layer = tf.reshape(features, [-1, config.input_width, config.input_height, config.input_channel])
-
-  layer = conv2d(input_layer, 32, 3, 1, padding='SAME', scope="conv_0")
-  layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_1")
-  layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_2")
+  
+  layer = slim.conv2d(input_layer, 32, 3, 1, padding='SAME', scope="conv_0")
+  layer = slim.conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_1")
+  layer = slim.conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_2")
   layr1 = layer;
 
   layer = slim.max_pool2d(layer, 3, 2, scope="pool_1")
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_3")
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_4")
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_5")
+  layer = slim.conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_3")
+  layer = slim.conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_4")
+  layer = slim.conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_5")
   layr2 = layer;
 
   layer = slim.max_pool2d(layer, 3, 2, scope="pool_2")
-  layer = conv2d(layer,128, 3, 1, padding='SAME', scope="conv_6")
-  layer = conv2d(layer,128, 3, 1, padding='SAME', scope="conv_7")
-  layer = conv2d(layer,128, 3, 1, padding='SAME', scope="conv_8")
+  layer = slim.conv2d(layer,128, 3, 1, padding='SAME', scope="conv_6")
+  layer = slim.conv2d(layer,128, 3, 1, padding='SAME', scope="conv_7")
+  layer = slim.conv2d(layer,128, 3, 1, padding='SAME', scope="conv_8")
   layer = slim.conv2d_transpose(layer, 32, 3, 2, padding='VALID', activation_fn=lrelu, normalizer_fn=slim.batch_norm, scope="deconv_0");
   layer = tf.concat([layer, layr2], 3)
 
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_9")
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_10")
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_11")
+  layer = slim.conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_9")
+  layer = slim.conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_10")
+  layer = slim.conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_11")
   layer = slim.conv2d_transpose(layer, 32, 3, 2, padding='VALID', activation_fn=lrelu, normalizer_fn=slim.batch_norm, scope="deconv_1");
   layer = tf.concat([layer, layr1], 3)
 
-  layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_12")
-  layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_13")
-  layer = conv2d(layer, 32, 3, 1, padding='SAME', normalizer_fn=None, scope="conv_14")
+  layer = slim.conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_12")
+  layer = slim.conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_13")
+  layer = slim.conv2d(layer, 32, 3, 1, padding='SAME', normalizer_fn=None, scope="conv_14")
 
-  logits= conv2d(layer,  1, 3, 1, padding='SAME', normalizer_fn=None, scope="conv_15", activation_fn=None)
+  logits= slim.conv2d(layer,  1, 3, 1, padding='SAME', normalizer_fn=None, scope="conv_15")
   output = tf.sigmoid(logits, name="sigmoid")
 
   predictions = {
       # Generate predictions (for PREDICT and EVAL mode)
       "masks": tf.sigmoid(logits, name="sigmoid"),
-      # Add `sigmoid_tensor` to the graph. It is used for PREDICT and by the
+      # Add `softmax_tensor` to the graph. It is used for PREDICT and by the
       # `logging_hook`.
-      "probabilities": tf.sigmoid(logits, name="sigmoid_tensor")
+      "probabilities": tf.nn.softmax(logits, name="softmax_tensor")
   }
   if mode == tf.estimator.ModeKeys.PREDICT:
     return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
@@ -127,8 +112,7 @@ def seg_model_fn(features, labels, mode, params=config):
   # Add evaluation metrics (for EVAL mode)
   eval_metric_ops = {
       "accuracy": tf.metrics.accuracy(
-          labels=tf.to_float(tf.greater(labels,0)),
-          predictions=tf.to_float(tf.greater(predictions["masks"],0.5)))}
+          labels=labels, predictions=predictions["masks"])}
   return tf.estimator.EstimatorSpec(
       mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
@@ -155,8 +139,8 @@ def main(unused_argv):
   )
 
   # Set up logging for predictions
-  # Log the values in the "sigmoid" tensor with label "probabilities"
-  tensors_to_log = {"probabilities": "sigmoid_tensor"}
+  # Log the values in the "Softmax" tensor with label "probabilities"
+  tensors_to_log = {"probabilities": "softmax_tensor"}
   logging_hook = tf.train.LoggingTensorHook(
       tensors=tensors_to_log, every_n_iter=50)
 
@@ -189,8 +173,10 @@ def main(unused_argv):
 
     return cropped_image, cropped_label
 
+
   def normalize(layer):
     return layer/127.5 - 1.
+
 
   def input_fn():
     #print ("Beginning of input_fn")
@@ -202,7 +188,7 @@ def main(unused_argv):
 
 
     image_ds = image_paths_ds.map(
-      lambda x:
+      lambda x: 
     #    tf.image.per_image_standardization( #Normalize data between -1 and 1
         normalize(
           tf.to_float(
@@ -214,22 +200,24 @@ def main(unused_argv):
     )
 
     # Parallel list of png files in mask dir (should contain files with the same names
-    mask_path_list = [config.train_mask_dir + '/' + x.split('/')[-1]
+    mask_path_list = [config.train_mask_dir + '/' + x.split('/')[-1] 
                         for x in image_path_list]
     mask_path_tensor = tf.convert_to_tensor (mask_path_list)
     mask_paths_ds = Dataset.from_tensor_slices(mask_path_tensor)
 
-    mask_ds = mask_paths_ds.map(lambda x:
+    mask_ds = mask_paths_ds.map(lambda x: 
     #  tf.image.per_image_standardization( #Normalize data between -1 and 1
+      normalize(
         tf.to_float(
               tf.image.decode_png(
                 tf.read_file(x)
           )
+        )
       )
     )
 
     dataset = Dataset.zip((image_ds, mask_ds))
-
+  
     dataset = dataset.map(
       lambda x, y: random_crop_image_and_labels(x, y, config.input_height, config.input_width, config.input_channel == 1)
     )
@@ -268,8 +256,8 @@ def main(unused_argv):
 
 
     image_ds = image_paths_ds.map(
-      lambda x: normalize(
-            tf.to_float(
+      lambda x: tf.to_float(
+            normalize(
               tf.image.decode_png(
                 tf.read_file(x)
           )
@@ -278,21 +266,23 @@ def main(unused_argv):
     )
 
     # Parallel list of png files in mask dir (should contain files with the same names
-    mask_path_list = [config.train_mask_dir + '/' + x.split('/')[-1]
+    mask_path_list = [config.train_mask_dir + '/' + x.split('/')[-1] 
                         for x in image_path_list]
     mask_path_tensor = tf.convert_to_tensor (mask_path_list)
     mask_paths_ds = Dataset.from_tensor_slices(mask_path_tensor)
 
-    mask_ds = mask_paths_ds.map(lambda x:
+    mask_ds = mask_paths_ds.map(lambda x: 
       tf.to_float(
+            normalize(
               tf.image.decode_png(
                 tf.read_file(x)
+          )
         )
       )
     )
 
     dataset = Dataset.zip((image_ds, mask_ds))
-
+  
     dataset = dataset.map(
       lambda x, y: random_crop_image_and_labels(x, y, config.input_height, config.input_width, config.input_channel == 1)
     )
@@ -305,13 +295,13 @@ def main(unused_argv):
 
   segmentation_estimator.train(
       input_fn=input_fn,
-      steps=500) # Use None for unlimited steps
+      steps=None) # Use None for unlimited steps
       #hooks=[logging_hook])
 
   # Evaluate the model and print results
 
-  eval_results = segmentation_estimator.evaluate(input_fn=eval_input_fn)
-  print(eval_results)
+#  eval_results = segmentation_estimator.evaluate(input_fn=eval_input_fn)
+#  print(eval_results)
 
 
 if __name__ == "__main__":

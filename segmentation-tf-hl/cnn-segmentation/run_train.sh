@@ -2,7 +2,7 @@
 
 GPU=0
 
-source activate tensorflow-1.4
+#source activate tensorflow-1.4
 
 # On eagle and lired, we installed an updated gclib
 CUDA_VISIBLE_DEVICES=${GPU} \
