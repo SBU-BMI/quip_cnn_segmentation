@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.contrib.data import Dataset
+#from tensorflow.contrib.data import Dataset
 
 import tensorflow.contrib.slim as slim
 from tensorflow.contrib.framework import arg_scope
@@ -196,9 +196,9 @@ def main(unused_argv):
     #print ("Beginning of input_fn")
 
     image_path_list = list(np.array(glob.glob(os.path.join(config.train_data_dir, '*.png'))))
-    image_path_tensor = tf.convert_to_tensor(image_path_list)
+    image_path_tensor = tf.convert_to_tensor(image_path_list, dtype=tf.string)
 
-    image_paths_ds = Dataset.from_tensor_slices(image_path_tensor)
+    image_paths_ds = tf.data.Dataset.from_tensor_slices(image_path_tensor)
 
 
     image_ds = image_paths_ds.map(
@@ -216,8 +216,8 @@ def main(unused_argv):
     # Parallel list of png files in mask dir (should contain files with the same names
     mask_path_list = [config.train_mask_dir + '/' + x.split('/')[-1]
                         for x in image_path_list]
-    mask_path_tensor = tf.convert_to_tensor (mask_path_list)
-    mask_paths_ds = Dataset.from_tensor_slices(mask_path_tensor)
+    mask_path_tensor = tf.convert_to_tensor (mask_path_list, dtype=tf.string)
+    mask_paths_ds = tf.data.Dataset.from_tensor_slices(mask_path_tensor)
 
     mask_ds = mask_paths_ds.map(lambda x:
     #  tf.image.per_image_standardization( #Normalize data between -1 and 1
@@ -228,7 +228,7 @@ def main(unused_argv):
       )
     )
 
-    dataset = Dataset.zip((image_ds, mask_ds))
+    dataset = tf.data.Dataset.zip((image_ds, mask_ds))
 
     dataset = dataset.map(
       lambda x, y: random_crop_image_and_labels(x, y, config.input_height, config.input_width, config.input_channel == 1)
@@ -262,9 +262,9 @@ def main(unused_argv):
 
   def eval_input_fn():
     image_path_list = list(np.array(glob.glob(os.path.join(config.train_data_dir, '*.png'))))
-    image_path_tensor = tf.convert_to_tensor(image_path_list)
+    image_path_tensor = tf.convert_to_tensor(image_path_list, dtype=tf.string)
 
-    image_paths_ds = Dataset.from_tensor_slices(image_path_tensor)
+    image_paths_ds = tf.data.Dataset.from_tensor_slices(image_path_tensor)
 
 
     image_ds = image_paths_ds.map(
@@ -280,8 +280,8 @@ def main(unused_argv):
     # Parallel list of png files in mask dir (should contain files with the same names
     mask_path_list = [config.train_mask_dir + '/' + x.split('/')[-1]
                         for x in image_path_list]
-    mask_path_tensor = tf.convert_to_tensor (mask_path_list)
-    mask_paths_ds = Dataset.from_tensor_slices(mask_path_tensor)
+    mask_path_tensor = tf.convert_to_tensor (mask_path_list, dtype=tf.string)
+    mask_paths_ds = tf.data.Dataset.from_tensor_slices(mask_path_tensor)
 
     mask_ds = mask_paths_ds.map(lambda x:
       tf.to_float(
@@ -291,7 +291,7 @@ def main(unused_argv):
       )
     )
 
-    dataset = Dataset.zip((image_ds, mask_ds))
+    dataset = tf.data.Dataset.zip((image_ds, mask_ds))
 
     dataset = dataset.map(
       lambda x, y: random_crop_image_and_labels(x, y, config.input_height, config.input_width, config.input_channel == 1)
