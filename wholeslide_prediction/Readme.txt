@@ -10,7 +10,7 @@ How to use?
 Using 'nohup bash 1_save_svs_to_tiles.sh &' to run it.
 3.2_test_seer_paral_release.sh is to run segmentation on tiles. 
 For segmenting different slides, the following parameters should be changed for each slide. 
-DATASET=BC_069_0_1 #the name of the slide without '.svs'
+DATASET=BC_065_0_1  #the name of the slide without '.svs'
 GPU=1 #which GPU to use 
 Using 'nohup bash 2_test_seer_paral_release.sh &' to run it.
 4.3_bi_csv_json.sh is to binarize the CNN prediction, generate polygon and json files.
