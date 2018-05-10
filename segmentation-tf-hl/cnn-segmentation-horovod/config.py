@@ -26,6 +26,7 @@ data_arg.add_argument('--train_data_dir', type=str, default="../../segmentation-
 data_arg.add_argument('--train_mask_dir', type=str, default="../../segmentation-tensorflow/data/nuclei/mask")
 data_arg.add_argument('--eval_data_dir', type=str, default="../../segmentation-tensorflow/data/nuclei/image")
 data_arg.add_argument('--eval_mask_dir', type=str, default="../../segmentation-tensorflow/data/nuclei/mask")
+data_arg.add_argument('--real_image_dir', type=str, default="../../segmentation-tensorflow/data/nuclei/real_75")
 
 # Training
 train_arg = add_argument_group('Training')
@@ -33,6 +34,7 @@ train_arg.add_argument('--batch_size', type=int, default=68, help='')
 train_arg.add_argument('--learner_learning_rate', type=float, default=0.03, help='')
 train_arg.add_argument('--optimizer', type=str, default='moment', choices=['adam', 'moment', 'sgd'], help='')
 train_arg.add_argument('--random_seed', type=int, default=123, help='')
+train_arg.add_argument('--is_train', type=str2bool, default=True, help='')
 
 
 
@@ -54,12 +56,10 @@ net_arg.add_argument('--resnet_refiner', type=str2bool, default=False, help='')
 data_arg.add_argument('--data_set', type=str, default='nuclei')
 data_arg.add_argument('--data_dir', type=str, default='data')
 data_arg.add_argument('--max_synthetic_num', type=int, default=-1)
-data_arg.add_argument('--real_image_dir', type=str, default="real")
 
 
 
 # Training / test parameters
-train_arg.add_argument('--is_train', type=str2bool, default=True, help='')
 train_arg.add_argument('--reg_scale_l1', type=float, default=0.01, help='')
 train_arg.add_argument('--reg_scale_l2', type=float, default=0.1, help='')
 train_arg.add_argument('--real_scale', type=float, default=0.0, help='')

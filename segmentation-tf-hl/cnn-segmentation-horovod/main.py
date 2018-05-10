@@ -21,6 +21,8 @@ from config import get_config
 
 import horovod.tensorflow as hvd
 
+from scipy.misc import imsave
+
 tf.logging.set_verbosity(tf.logging.INFO)
 
 config = None
@@ -63,7 +65,7 @@ def seg_model_fn(features, labels, mode, params=config):
         #tf.float32, [None, self.input_height, self.input_width, self.input_channel])
   #input_layer.set_shape([None, self.input_width, self.input_height, self.input_channel])
 
-  input_layer = tf.reshape(features, [-1, config.input_width, config.input_height, config.input_channel])
+  input_layer = tf.reshape(features['image'], [-1, config.input_width, config.input_height, config.input_channel])
 
   layer = conv2d(input_layer, 32, 3, 1, padding='SAME', scope="conv_0")
   layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_1")
@@ -98,10 +100,12 @@ def seg_model_fn(features, labels, mode, params=config):
 
   predictions = {
       # Generate predictions (for PREDICT and EVAL mode)
-      "masks": tf.sigmoid(logits, name="sigmoid"),
+      "masks": tf.round(output) * 255,
       # Add `sigmoid_tensor` to the graph. It is used for PREDICT and by the
       # `logging_hook`.
-      "probabilities": tf.sigmoid(logits, name="sigmoid_tensor")
+      #"probabilities": tf.sigmoid(logits, name="sigmoid_tensor"),
+      # Can't forward features this way, need to use forward_features() as wrapper to estimator object instead
+      #"in_file": features['in_file']
   }
   if mode == tf.estimator.ModeKeys.PREDICT:
     return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
@@ -172,6 +176,9 @@ def main(unused_argv):
       config=tf.estimator.RunConfig(session_config=cfg)
   )
 
+  #Include the file names of input images in the prediction results so we can write out the mask files later
+  segmentation_estimator = tf.contrib.estimator.forward_features (segmentation_estimator, 'in_file')
+
   # Set up logging for predictions
   # Log the values in the "sigmoid" tensor with label "probabilities"
   tensors_to_log = {"probabilities": "sigmoid_tensor"}
@@ -183,8 +190,8 @@ def main(unused_argv):
   #print ("data shape ", train_data.shape)
   #print ("data label shape ", train_label.shape)
 
-  def random_crop_image_and_labels(image, label, h, w, is_grayscale):
-    combined = tf.concat([image, label], axis=2)
+  def random_crop_image_and_labels(features, label, h, w, is_grayscale):
+    combined = tf.concat([features['image'], label], axis=2)
     if is_grayscale:
       combined_crop = tf.random_crop(combined, size=[h, w, 2])
     else:
@@ -205,38 +212,31 @@ def main(unused_argv):
       cropped_image.set_shape([h, w, 3])
       cropped_label.set_shape([h, w, 1])
 
-    return cropped_image, cropped_label
+    return {'image': cropped_image, 'in_file': features['in_file']}, cropped_label
+
 
   def normalize(layer):
     return layer/127.5 - 1.
 
-  def input_fn():
-    #print ("Beginning of input_fn")
 
+  # Input function for use with segmentation_estimator.train()
+  def input_fn():
     image_path_list = list(np.array(glob.glob(os.path.join(config.train_data_dir, '*.png'))))
     image_path_tensor = tf.convert_to_tensor(image_path_list, dtype=tf.string)
-
     image_paths_ds = tf.data.Dataset.from_tensor_slices(image_path_tensor)
-
-
     image_ds = image_paths_ds.map(
-      lambda x:
-    #    tf.image.per_image_standardization( #Normalize data between -1 and 1
-        normalize(
+      lambda name: { 'image': normalize(
           tf.to_float(
               tf.image.decode_png(
-                tf.read_file(x)
+                tf.read_file(name)
           )
         )
-      )
-    )
-
+      ), 'in_file': name})
     # Parallel list of png files in mask dir (should contain files with the same names
     mask_path_list = [config.train_mask_dir + '/' + x.split('/')[-1]
                         for x in image_path_list]
     mask_path_tensor = tf.convert_to_tensor (mask_path_list, dtype=tf.string)
     mask_paths_ds = tf.data.Dataset.from_tensor_slices(mask_path_tensor)
-
     mask_ds = mask_paths_ds.map(lambda x:
     #  tf.image.per_image_standardization( #Normalize data between -1 and 1
         tf.to_float(
@@ -245,62 +245,35 @@ def main(unused_argv):
           )
       )
     )
-
     dataset = tf.data.Dataset.zip((image_ds, mask_ds))
-
     dataset = dataset.map(
       lambda x, y: random_crop_image_and_labels(x, y, config.input_height, config.input_width, config.input_channel == 1)
     )
-
     dataset = dataset.batch (config.batch_size).shuffle (buffer_size=1000).repeat()
-
     rv = dataset.make_one_shot_iterator().get_next()
-
-    #print ("Dumping return val from input function")
-    #print (rv)
-
     return rv
 
 
-  #Use this code to debug input_fn
-#  images, labels = input_fn()
-#  with tf.Session() as sess:
-#    img, label = sess.run ([images, labels])
-#    print (img.shape, label.shape)
-#    print (img[0])
-#    plt.imshow(img[0])
-#    plt.show()
 
-#    mask = np.array(label[0]).reshape((140,140))
-#    plt.imshow(mask)
-#    plt.show()
-#  return
-
-
-
+  # Input function for use with segmentation_estimator.evaluate()
   def eval_input_fn():
     image_path_list = list(np.array(glob.glob(os.path.join(config.train_data_dir, '*.png'))))
     image_path_tensor = tf.convert_to_tensor(image_path_list, dtype=tf.string)
-
     image_paths_ds = tf.data.Dataset.from_tensor_slices(image_path_tensor)
-
-
     image_ds = image_paths_ds.map(
-      lambda x: normalize(
+      lambda name: { 'image': normalize(
             tf.to_float(
               tf.image.decode_png(
-                tf.read_file(x)
+                tf.read_file(name)
           )
         )
-      )
-    )
-
+      ), 'in_file': name
+      })
     # Parallel list of png files in mask dir (should contain files with the same names
     mask_path_list = [config.train_mask_dir + '/' + x.split('/')[-1]
                         for x in image_path_list]
     mask_path_tensor = tf.convert_to_tensor (mask_path_list, dtype=tf.string)
     mask_paths_ds = tf.data.Dataset.from_tensor_slices(mask_path_tensor)
-
     mask_ds = mask_paths_ds.map(lambda x:
       tf.to_float(
               tf.image.decode_png(
@@ -308,16 +281,47 @@ def main(unused_argv):
         )
       )
     )
-
     dataset = tf.data.Dataset.zip((image_ds, mask_ds))
-
     dataset = dataset.map(
       lambda x, y: random_crop_image_and_labels(x, y, config.input_height, config.input_width, config.input_channel == 1)
     )
-
     dataset = dataset.batch (config.batch_size)
-
     return dataset.make_one_shot_iterator().get_next()
+
+
+  # Input function for use with segmentation_estimator.predict()
+  def predict_input_fn():
+    image_path_list = list(np.array(glob.glob(os.path.join(config.real_image_dir, '*.png'))))
+    image_path_tensor = tf.convert_to_tensor(image_path_list, dtype=tf.string)
+    image_paths_ds = tf.data.Dataset.from_tensor_slices(image_path_tensor)
+    image_ds = image_paths_ds.map(
+      lambda name: {'image': normalize(
+            tf.to_float(
+              tf.image.decode_png(
+                tf.read_file(name)
+          )
+        )
+      ), 'in_file': [name]}
+    )
+    # This is broken since it ignores the image/in_file dictionary. Just commenting out as images should already be the right size
+    #image_ds = image_ds.map(
+    #  lambda img: tf.image.crop_to_bounding_box(img, 0, 0, config.input_height, config.input_width)
+    #)
+    return image_ds.make_one_shot_iterator().get_next()
+
+
+  #Use this code to debug input_fn
+#  features = predict_input_fn()
+#  with tf.Session() as sess:
+#    feat = sess.run ([features])
+#    print (feat[0])
+#    print ("::::::", feat[0]['in_file'])
+#    print (feat[0]['image'].shape)
+#    plt.imshow(feat[0]['image'][0])
+#    plt.show()
+
+#  return
+
 
 
   # Horovod: BroadcastGlobalVariablesHook broadcasts initial variable states from
@@ -326,15 +330,37 @@ def main(unused_argv):
   # restored from a checkpoint.
   bcast_hook = hvd.BroadcastGlobalVariablesHook(0)
 
-  segmentation_estimator.train(
+  if config.is_train:
+
+    segmentation_estimator.train(
       input_fn=input_fn,
       steps=500, # Use None for unlimited steps
       hooks=[logging_hook, bcast_hook])
 
-  # Evaluate the model and print results
+    # Evaluate the model and print results
 
-  eval_results = segmentation_estimator.evaluate(input_fn=eval_input_fn)
-  print(eval_results)
+    eval_results = segmentation_estimator.evaluate(input_fn=eval_input_fn)
+    print(eval_results)
+
+  else:
+
+    predictions = segmentation_estimator.predict(
+      input_fn=predict_input_fn
+    )
+
+    #next = predictions.next()
+
+    #print (next)
+
+    print (predictions)
+
+    pl = list(predictions)
+
+    for pred in pl:
+      print ("Writing:")
+      print (pred['in_file'])
+      print (pred['masks'].shape)
+      imsave(pred['in_file']+"_mask", np.array(pred['masks'][:,:,0]), format="png")
 
 
 if __name__ == "__main__":
