@@ -153,11 +153,8 @@ def _read_files_fn(data, mask):
 
 
 def main(unused_argv):
-  # Load training and eval data
-  #train_data, train_labels = get_data(config.train_data_dir, config.train_mask_dir)
-#  eval_data, eval_labels = get_data(config.eval_data_dir, config.eval_mask_dir)
 
-  print (config)
+  #print (config)
 
   hvd.init()
 
@@ -185,10 +182,6 @@ def main(unused_argv):
   logging_hook = tf.train.LoggingTensorHook(
       tensors=tensors_to_log, every_n_iter=100)
 
-  #print(type(train_data))
-  #print(tf.shape(train_data))
-  #print ("data shape ", train_data.shape)
-  #print ("data label shape ", train_label.shape)
 
   def random_crop_image_and_labels(features, label, h, w, is_grayscale):
     combined = tf.concat([features['image'], label], axis=2)
@@ -213,10 +206,6 @@ def main(unused_argv):
       cropped_label.set_shape([h, w, 1])
 
     return {'image': cropped_image, 'in_file': features['in_file']}, cropped_label
-
-
-  def normalize(layer):
-    return layer/127.5 - 1.
 
 
   # Input function for use with segmentation_estimator.train()
@@ -331,36 +320,24 @@ def main(unused_argv):
   bcast_hook = hvd.BroadcastGlobalVariablesHook(0)
 
   if config.is_train:
-
     segmentation_estimator.train(
       input_fn=input_fn,
       steps=500, # Use None for unlimited steps
       hooks=[logging_hook, bcast_hook])
-
     # Evaluate the model and print results
-
     eval_results = segmentation_estimator.evaluate(input_fn=eval_input_fn)
     print(eval_results)
 
   else:
-
     predictions = segmentation_estimator.predict(
       input_fn=predict_input_fn
     )
-
-    #next = predictions.next()
-
-    #print (next)
-
-    print (predictions)
-
     pl = list(predictions)
-
     for pred in pl:
-      print ("Writing:")
-      print (pred['in_file'])
-      print (pred['masks'].shape)
-      imsave(pred['in_file']+"_mask", np.array(pred['masks'][:,:,0]), format="png")
+      #print ("Writing:")
+      #print (pred['in_file'])
+      #print (pred['masks'].shape)
+      imsave(pred['in_file'][:-4]+"_mask.png", np.array(pred['masks'][:,:,0]), format="png")
 
 
 if __name__ == "__main__":
