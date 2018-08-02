@@ -56,54 +56,54 @@ def conv2d(inputs, num_outputs, kernel_size, stride,
 def seg_model_fn(features, labels, mode, params=config):
   """Create segmentation cnn model"""
   name = None
-  #with tf.variable_scope("learner", reuse=False) as sc:
+  with tf.variable_scope("learner", reuse=False) as sc:
     # Input Layer
     # Reshape X to 4-D tensor: [batch_size, width, height, channels]
-  #input_layer = tf.reshape(features, [-1, config.input_width, config.input_height, config.input_channel])
+    #input_layer = tf.reshape(features, [-1, config.input_width, config.input_height, config.input_channel])
 
-  #input_layer = tf.placeholder(
+    #input_layer = tf.placeholder(
         #tf.float32, [None, self.input_height, self.input_width, self.input_channel])
-  #input_layer.set_shape([None, self.input_width, self.input_height, self.input_channel])
+    #input_layer.set_shape([None, self.input_width, self.input_height, self.input_channel])
 
-  input_layer = tf.reshape(features['image'], [-1, config.input_width, config.input_height, config.input_channel])
+    input_layer = tf.reshape(features['image'], [-1, config.input_width, config.input_height, config.input_channel])
 
-  layer = conv2d(input_layer, 32, 3, 1, padding='SAME', scope="conv_0")
-  layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_1")
-  layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_2")
-  layr1 = layer;
+    layer = conv2d(input_layer, 32, 3, 1, padding='SAME', scope="conv_0")
+    layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_1")
+    layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_2")
+    layr1 = layer;
 
-  layer = slim.max_pool2d(layer, 3, 2, scope="pool_1")
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_3")
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_4")
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_5")
-  layr2 = layer;
+    layer = slim.max_pool2d(layer, 3, 2, scope="pool_1")
+    layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_3")
+    layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_4")
+    layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_5")
+    layr2 = layer;
 
-  layer = slim.max_pool2d(layer, 3, 2, scope="pool_2")
-  layer = conv2d(layer,128, 3, 1, padding='SAME', scope="conv_6")
-  layer = conv2d(layer,128, 3, 1, padding='SAME', scope="conv_7")
-  layer = conv2d(layer,128, 3, 1, padding='SAME', scope="conv_8")
-  layer = slim.conv2d_transpose(layer, 32, 3, 2, padding='VALID', activation_fn=lrelu, normalizer_fn=slim.batch_norm, scope="deconv_0");
-  layer = tf.concat([layer, layr2], 3)
+    layer = slim.max_pool2d(layer, 3, 2, scope="pool_2")
+    layer = conv2d(layer,128, 3, 1, padding='SAME', scope="conv_6")
+    layer = conv2d(layer,128, 3, 1, padding='SAME', scope="conv_7")
+    layer = conv2d(layer,128, 3, 1, padding='SAME', scope="conv_8")
+    layer = slim.conv2d_transpose(layer, 32, 3, 2, padding='VALID', activation_fn=lrelu, normalizer_fn=slim.batch_norm, scope="deconv_0");
+    layer = tf.concat([layer, layr2], 3)
 
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_9")
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_10")
-  layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_11")
-  layer = slim.conv2d_transpose(layer, 32, 3, 2, padding='VALID', activation_fn=lrelu, normalizer_fn=slim.batch_norm, scope="deconv_1");
-  layer = tf.concat([layer, layr1], 3)
+    layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_9")
+    layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_10")
+    layer = conv2d(layer, 64, 3, 1, padding='SAME', scope="conv_11")
+    layer = slim.conv2d_transpose(layer, 32, 3, 2, padding='VALID', activation_fn=lrelu, normalizer_fn=slim.batch_norm, scope="deconv_1");
+    layer = tf.concat([layer, layr1], 3)
 
-  layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_12")
-  layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_13")
-  layer = conv2d(layer, 32, 3, 1, padding='SAME', normalizer_fn=None, scope="conv_14")
+    layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_12")
+    layer = conv2d(layer, 32, 3, 1, padding='SAME', scope="conv_13")
+    layer = conv2d(layer, 32, 3, 1, padding='SAME', normalizer_fn=None, scope="conv_14")
 
-  logits= conv2d(layer,  1, 3, 1, padding='SAME', normalizer_fn=None, scope="conv_15", activation_fn=None)
-  output = tf.sigmoid(logits, name="sigmoid")
+    logits= conv2d(layer,  1, 3, 1, padding='SAME', normalizer_fn=None, scope="conv_15", activation_fn=None)
+    output = tf.sigmoid(logits, name="sigmoid")
 
   predictions = {
       # Generate predictions (for PREDICT and EVAL mode)
       "masks": tf.round(output) * 255,
       # Add `sigmoid_tensor` to the graph. It is used for PREDICT and by the
       # `logging_hook`.
-      #"probabilities": tf.sigmoid(logits, name="sigmoid_tensor"),
+      "probabilities": tf.sigmoid(logits, name="sigmoid_tensor"),
       # Can't forward features this way, need to use forward_features() as wrapper to estimator object instead
       #"in_file": features['in_file']
   }
