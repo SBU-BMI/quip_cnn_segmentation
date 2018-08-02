@@ -1,0 +1,1 @@
+python -u save_svs_to_tiles.py '/data01/shared/tcga_analysis/seer_data/images/Hawaii/batch3/BC_069_0_1.svs' './tiles' 
