@@ -34,6 +34,7 @@ for name in files:
     x=int(name[0])
     y=int(name[1])
     size=int(name[2])
+    size2=int(name[3])
     mpp=float(name[4])
     line='{ "input_type" : "wsi", "otsu_ratio" : 0.9, "curvature_weight" : 0.8, "min_size" : 3, "max_size" : 200, "ms_kernel" : 20, "declump_type" : 1, "levelset_num_iters" : 100, "mpp" : '+str(mpp)+', "image_width" : '+str(width)+', "image_height" : '+str(height)+', "tile_minx" : '+str(x)+', "tile_miny" : '+str(y)+', "tile_width" : '+str(size)+', "tile_height" : '+str(size)+', "patch_minx" : '+str(x)+', "patch_miny" : '+str(y)+', "patch_width" : '+str(size)+', "patch_height" : '+str(size)+', "output_level" : "mask", "out_file_prefix" : "'+name1+'", "subject_id" : "BC_056_0_1", "case_id" : "BC_056_0_1", "analysis_id" : "test1", "analysis_desc" : "" }'
     
@@ -52,11 +53,11 @@ for name in files:
     dict_model['tile_minx']=x
     dict_model['tile_miny']=y
     dict_model['tile_width']=size
-    dict_model['tile_height']=size
+    dict_model['tile_height']=size2
     dict_model['patch_minx']=x
     dict_model['patch_miny']=y
     dict_model['patch_width']=size
-    dict_model['patch_height']=size
+    dict_model['patch_height']=size2
     dict_model['output_level']='mask'
     
     dict_model['out_file_prefix']=name1
