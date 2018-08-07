@@ -1,0 +1,244 @@
+#
+# Ubuntu ML container
+# * TensorFlow 1.4
+# * Uber Horovod: https://eng.uber.com/horovod/ (w/ MPI)
+#
+
+BootStrap: docker
+From: nvidia/cuda:8.0-cudnn7-devel-ubuntu16.04
+IncludeCmd: false
+
+%labels
+
+Maintainer G. Perdue
+Date: 2017-12-05
+cuda_driver 375.66
+
+%help
+
+A portable Ubuntu 16.04 environment with TensorFlow 1.4 and Horovod
+
+%environment
+    # set these environment variables
+    export NV_DRIVER_VERSION=375.66
+    export NV_DRIVER_ROOT=/usr/local/NVIDIA-Linux-x86_64
+    export CUDA_ROOT=/usr/local/cuda
+    export CUDA_HOME=/usr/local/cuda
+    export PATH=$PATH:$NV_DRIVER_ROOT:$CUDA_ROOT/bin
+    export LD_LIBRARY_PATH=$NV_DRIVER_ROOT:$CUDA_ROOT/lib64
+
+%runscript
+    # Check the current environment
+    chk_nvidia_uvm=$(grep nvidia_uvm /proc/modules)
+    if [ -z "$chk_nvidia_uvm" ]; then
+        echo "Problem detected on the host: the Linux kernel module nvidia_uvm is not loaded"
+    fi
+    exec /bin/bash
+
+%setup
+# Runs from outside the container
+#
+cp libcudnn6_6.0.21-1+cuda8.0_amd64.deb ${SINGULARITY_ROOTFS}/
+cp libcudnn6-dev_6.0.21-1+cuda8.0_amd64.deb ${SINGULARITY_ROOTFS}/
+
+#cp openmpi-1.8.1.tar.gz ${SINGULARITY_ROOTFS}/
+
+%post
+    # Runs within the container during Bootstrap
+
+    # make filesystem mount points
+    mkdir /data
+
+    # Set up some required environment defaults
+    export LC_ALL=C
+    export CUDA_HOME=/usr/local/cuda
+    export CUDA_ROOT=/usr/local/cuda
+    export PATH=/bin:/sbin:/usr/bin:/usr/sbin:${CUDA_HOME}/bin:/usr/local/NVIDIA-Linux-x86_64:$PATH
+    export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${CUDA_HOME}/extras/CUPTI/lib64:/usr/local/NVIDIA-Linux-x86_64
+
+
+    # Install the necessary packages (from repo)
+    apt-get update && apt-get install -y --no-install-recommends \
+    	autoconf \
+	automake \
+        bc \
+	cmake \
+        curl \
+	g++ \
+	gfortran \
+        git \
+	libatlas-base-dev \
+	libatlas3-base \
+	libblas-dev \
+	libboost-all-dev \
+	libcupti-dev \
+	libcurl4-openssl-dev \
+	libffi-dev \
+        libfreetype6-dev \
+	libgflags-dev \
+	libgoogle-glog-dev \
+        libgraphviz-dev \
+	libhdf5-serial-dev \
+	libibverbs-dev \
+	libjpeg-dev \
+	libleveldb-dev \
+	liblcms2-dev \
+	liblapack-dev \
+	liblapacke-dev \
+	liblmdb-dev \
+        libopenblas-dev \
+	libopenmpi-dev \
+	libopencv-dev \
+	libprotobuf-dev \
+        libpng-dev \
+	libsnappy-dev \
+	libssl-dev \
+	libxml2-dev \
+	libtiff5-dev \
+	libwebp-dev \
+        libzmq3-dev \
+        pkg-config \
+	protobuf-compiler \
+        python-dev \
+        python-pip \
+        python-pydot \
+	python-setuptools \
+	python-tk \
+        rsync \
+        software-properties-common \
+	time \
+        unzip \
+	vim \
+	zip \
+	wget \
+        zlib1g-dev
+    apt-get clean && \
+    apt-get autoremove && \
+    rm -rf /var/lib/apt/lists/*
+
+dpkg -i libcudnn6_6.0.21-1+cuda8.0_amd64.deb
+dpkg -i libcudnn6-dev_6.0.21-1+cuda8.0_amd64.deb
+
+#tar -xvzf openmpi-1.8.1.tar.gz 
+
+#cd openmpi-1.8.1
+#./configure
+#make
+#make install
+#cd ..
+
+    ##### INSTALL NVIDIA DRIVERS #####
+    
+    # get NVIDIA drivers
+    cd /opt/
+    wget http://us.download.nvidia.com/XFree86/Linux-x86_64/375.66/NVIDIA-Linux-x86_64-375.66.run
+    # extract .run file to /usr/local/
+    sh NVIDIA-Linux-x86_64-375.66.run -x
+    mv NVIDIA-Linux-x86_64-375.66 /usr/local/NVIDIA-Linux-x86_64
+    rm NVIDIA-Linux-x86_64-375.66.run
+    
+    # create symbolic links
+    cd /usr/local/NVIDIA-Linux-x86_64
+    for n in *.375.66; do
+        ln -v -s $n ${n%.375.66}
+    done
+    ln -v -s libnvidia-ml.so.375.66 libnvidia-ml.so.1
+    ln -v -s libcuda.so.375.66 libcuda.so.1
+
+    ##### INSTALL NCLL #####
+
+    cd /opt/
+    git clone https://github.com/NVIDIA/nccl.git
+    cd nccl/
+    make
+    make install
+    cd ../
+    rm -rf nccl
+ 
+
+
+    # Update to the latest pip (newer than repo)
+    pip install --no-cache-dir --upgrade pip==9.0.3
+    pip install -U setuptools
+    # Install other needed packages
+    pip install --no-cache-dir --upgrade \
+        chardet \
+    	Cheetah \
+    	Cython \
+        deepdish \
+        future \
+	h5py \
+	ipykernel \
+	jupyter \
+	leveldb \
+	lmdb \
+	Mako \
+        matplotlib \
+	ndg-httpsclient \
+	nose \
+	numpy \
+	pandas \
+	path.py \
+	Pillow \
+	pyasn1 \
+	pygments \
+	pyopenssl \
+	python-dateutil \
+	python-gflags \
+	pyyaml \
+	requests \
+        scipy \
+	scikit-image \
+        scikit-learn \
+	six \
+	sqlalchemy \
+	sympy \
+        tqdm \
+	urllib3 \
+	virtualenv \
+	wheel \
+	zmq
+
+    # libgpuarray with python binding
+    git clone https://github.com/Theano/libgpuarray.git
+    sdir=`pwd`
+    cd libgpuarray && \
+    mkdir Build && \
+    cd Build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release && \
+    make && \
+    make install && \
+    cd .. && \
+    python2.7 setup.py install && \
+    cd $sdir && \
+    rm -rf libgpuarray
+    /sbin/ldconfig
+
+    # pyCUDA
+    ( cd /tmp && \
+      wget https://pypi.python.org/packages/b3/30/9e1c0a4c10e90b4c59ca7aa3c518e96f37aabcac73ffe6b5d9658f6ef843/pycuda-2017.1.1.tar.gz#md5=9e509f53a23e062b31049eb8220b2e3d && \
+      tar xf pycuda-2017.1.1.tar.gz && \
+      cd pycuda-2017.1.1 && \
+      python configure.py --cuda-root=${CUDA_HOME} --cudadrv-lib-dir=${NV_DRIVER_ROOT} && \
+      make install \
+    )
+
+    # TensorFlow package versions as listed here:
+    #   https://www.tensorflow.org/get_started/os_setup#test_the_tensorflow_installation
+    #
+    # Ubuntu/Linux 64-bit, GPU enabled, Python 2.7 (tf1.3 requires CUDA toolkit 8.0 and CuDNN v6)
+    # https://www.tensorflow.org/install/install_linux#the_url_of_the_tensorflow_python_package
+    export TF_BINARY_URL=https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow_gpu-1.4.0-cp27-none-linux_x86_64.whl
+    pip install --no-cache-dir --ignore-installed --upgrade $TF_BINARY_URL
+
+    # Horovod
+    pip install --no-cache-dir --upgrade horovod
+
+    /sbin/ldconfig
+
+%test
+    # Sanity check that the container is operating
+    #
+    # nosetests /usr/local/caffe/source/python
+    # nosetests 
+
