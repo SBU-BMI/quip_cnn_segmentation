@@ -8,8 +8,7 @@ import sys
 slide=sys.argv[1]
 slidesp=slide.split('/')
 slide_name=slidesp[len(slidesp)-1]
-print "slide_name"
-print(slide_name)
+
 
 #remove file extension
 if (slide_name.find('.svs') != -1):#svs image file
@@ -17,10 +16,7 @@ if (slide_name.find('.svs') != -1):#svs image file
 elif (slide_name.find('.tif') != -1):#tif image file
  image_id=slide_name.replace('.tif',''); 
 else:
-  image_id= slide_name        
-print "image_id";
-print image_id;
-
+  image_id= slide_name  
 
 files=os.listdir('./tiles/'+slide_name) #RGB tiles folder
 sufix='-algmeta.json'
