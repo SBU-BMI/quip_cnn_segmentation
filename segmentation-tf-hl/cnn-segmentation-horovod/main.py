@@ -8,6 +8,7 @@ import tensorflow as tf
 
 import tensorflow.contrib.slim as slim
 from tensorflow.contrib.framework import arg_scope
+
 import random
 
 from matplotlib import pyplot as plt
@@ -22,6 +23,7 @@ from config import get_config
 import horovod.tensorflow as hvd
 
 from scipy.misc import imsave
+from scipy.misc import imread
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
@@ -299,6 +301,7 @@ def main(unused_argv):
     return image_ds.make_one_shot_iterator().get_next()
 
 
+
   #Use this code to debug input_fn
 #  features = predict_input_fn()
 #  with tf.Session() as sess:
@@ -322,22 +325,122 @@ def main(unused_argv):
   if config.is_train:
     segmentation_estimator.train(
       input_fn=input_fn,
-      steps=500, # Use None for unlimited steps
+      steps=100 // hvd.size(), # Use None for unlimited steps
       hooks=[logging_hook, bcast_hook])
     # Evaluate the model and print results
     eval_results = segmentation_estimator.evaluate(input_fn=eval_input_fn)
     print(eval_results)
 
   else:
+
+    #Read image into numpy array
+    tile = imread ("predictions/44001_44001_4000_4000_0.5.png", mode='RGB')
+    print (tile)
+    tile_width = len(tile[0])
+    tile_height = len (tile)
+    print ("Tile dims are %ix%i"%(tile_width, tile_height))
+
+    x_step = y_step = 75
+    mask = np.zeros ((tile_width, tile_height, 1))
+
+    print ("Mask dims are ", mask.shape)
+
+    # Set up lists for input function...
+    images = []
+    in_files = [] #This is unused, but structurally required
+
+    #Loop over chunks
+    for x_offset in range (0, tile_width, x_step):
+      for y_offset in range (0, tile_height, y_step):
+
+        if x_offset + x_step > tile_width:
+          x_offset = tile_width - x_step
+
+        if y_offset + y_step > tile_height:
+          y_offset = tile_height - y_step
+
+        # Add chunk to the input
+        images.append (tile[x_offset:x_offset+x_step,y_offset:y_offset+y_step])
+        in_files.append ("dummy")
+
+
+    #Apply predictions
+    print ("Processing chunk at %i,%i"%(x_offset,y_offset))
     predictions = segmentation_estimator.predict(
-      input_fn=predict_input_fn
+    input_fn=tf.estimator.inputs.numpy_input_fn(
+      {
+        'image': np.array(images, dtype=np.float32),
+        'in_file': np.array(in_files, dtype=np.object)
+      }, batch_size=68, shuffle=False, num_epochs=1)
     )
-    pl = list(predictions)
-    for pred in pl:
-      #print ("Writing:")
-      #print (pred['in_file'])
-      #print (pred['masks'].shape)
-      imsave(pred['in_file'][:-4]+"_mask.png", np.array(pred['masks'][:,:,0]), format="png")
+
+
+    #Loop over chunks again to process the predictions
+    for x_offset in range (0, tile_width, x_step):
+      for y_offset in range (0, tile_height, y_step):
+
+        if x_offset + x_step > tile_width:
+          x_offset = tile_width - x_step
+
+        if y_offset + y_step > tile_height:
+          y_offset = tile_height - y_step
+
+        mask[x_offset:x_offset+x_step,y_offset:y_offset+y_step] = next(predictions)['probabilities']
+
+
+    #print (mask)
+
+    #Write predictions to mask file
+    imsave ("predictions/44001_44001_4000_4000_0.5_pred.png", mask[:,:,0])
+
+
+
+  # Deprecated
+  def slow_prediction():
+    #Read image into numpy array
+    tile = imread ("predictions/44001_44001_4000_4000_0.5.png", mode='RGB')
+    print (tile)
+    tile_width = len(tile[0])
+    tile_height = len (tile)
+    print ("Tile dims are %ix%i"%(tile_width, tile_height))
+
+    x_step = y_step = 75
+    mask = np.zeros ((tile_width, tile_height, 1))
+
+    print ("Mask dims are ", mask.shape)
+
+    #Loop over chunks
+    for x_offset in range (0, tile_width, x_step):
+      for y_offset in range (0, tile_height, y_step):
+
+        if x_offset + x_step > tile_width:
+          x_offset = tile_width - x_step
+
+        if y_offset + y_step > tile_height:
+          y_offset = tile_height - y_step
+
+        #print (np.array(tile[x_offset:x_offset+x_step,y_offset:y_offset+y_step], dtype=np.float32).shape)
+        #print (np.array("dummy", dtype=np.object).shape)
+
+        #Apply prediction to each chunk
+        print ("Processing chunk at %i,%i"%(x_offset,y_offset))
+        predictions = segmentation_estimator.predict(
+        input_fn=tf.estimator.inputs.numpy_input_fn(
+          {
+            'image': np.array([tile[x_offset:x_offset+x_step,y_offset:y_offset+y_step]], dtype=np.float32),
+            'in_file': np.array(["dummy"], dtype=np.object)
+          }, batch_size=1, shuffle=False, num_epochs=1)
+        )        
+
+        tile_mask = list(predictions)[0]['probabilities']
+        mask[x_offset:x_offset+x_step,y_offset:y_offset+y_step] = tile_mask
+
+
+    print (mask)
+
+    #Write predictions to mask file
+    imsave ("predictions/44001_44001_4000_4000_0.5_pred.png", mask[:,:,0])
+    
 
 
 if __name__ == "__main__":
