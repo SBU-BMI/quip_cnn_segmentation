@@ -77,11 +77,9 @@ misc_arg.add_argument('--debug', type=str2bool, default=False)
 misc_arg.add_argument('--gpu_memory_fraction', type=float, default=1.0)
 misc_arg.add_argument('--max_image_summary', type=int, default=32)
 misc_arg.add_argument('--sample_image_grid', type=eval, default='[10, 10]')
-#Mao
-mao_arg = add_argument_group('Mao')
-mao_arg.add_argument('--mao_step_size',type=int,default=100)
-mao_arg.add_argument('--mao_index',type=int,default=0)
-mao_arg.add_argument('--mao_file',type=str,default=1000)
+misc_arg.add_argument('--par_code', type=int, default=0)
+misc_arg.add_argument('--par_max', type=int, default=1)
+misc_arg.add_argument('--seg_path', type=str, default='')
 
 def get_config():
   config, unparsed = parser.parse_known_args()
