@@ -216,189 +216,70 @@ class Trainer(object):
     kernel = kernel_raw/kernel_raw.sum()
     return kernel;
 
-  def load_data(self, image_folder):
-    X = [];
-    F = [];
-    R = [];
-
-    tile_list = image_folder + '/image_resize_list.txt';
-    lines = [line.strip() for line in open(tile_list, 'r')];
-    for line_index,line in enumerate(lines):
-      print('loaded:%s'%(line_index))
-      imag_path = image_folder + '/' + line.split()[0];
-      resize_f = float(line.split()[1]);
-      if abs(resize_f - 1) >= 0.001:
-        imag = misc.imresize(np.array(Image.open(imag_path).convert('RGB')), resize_f).astype(np.float32);
-      else:
-        imag = np.array(Image.open(imag_path).convert('RGB')).astype(np.float32);
-      X.append(normalize(imag));
-      F.append(imag_path.split('/')[-1]);
-      R.append(resize_f);
-
-    print 'Tiles loaded.', len(X);
+  def load_data(self, image_folder, line):
+    imag_path = image_folder + '/' + line.split()[0];
+    resize_f = float(line.split()[1]);
+    if abs(resize_f - 1) >= 0.001:
+      imag = misc.imresize(np.array(Image.open(imag_path).convert('RGB')), resize_f).astype(np.float32);
+    else:
+      imag = np.array(Image.open(imag_path).convert('RGB')).astype(np.float32);
+    X = normalize(imag);
+    F = imag_path.split('/')[-1];
+    R = resize_f;
     return X, F, R;
 
-  def load_data_group_mao(self, image_folder,group_size):
-    
-    tile_list = image_folder +  '/image_resize_list.txt';
-    lines = [line.strip() for line in open(tile_list, 'r')];
-    #mao
-    mao_step_size=self.config.mao_step_size
-    mao_index=self.config.mao_index
-    print('mao_step_size:%s'%(mao_step_size))
-    print('mao_index%s'%(mao_index))
-    start_point=mao_index*mao_step_size
-    end_point=mao_index*mao_step_size+mao_step_size
-    if end_point>len(lines):
-      end_point=len(lines)
-    
-    for start_index in range(start_point,end_point,group_size):
-      X = [];
-      F = [];
-      R = [];
-      if start_index+group_size<=end_point:
-        lines_group=lines[start_index:start_index+group_size]
-      else:
-        lines_group=lines[start_index:end_point]
-      for line_index,line in enumerate(lines_group):
-        print('loaded:%s'%(line_index))
-        print(line.split()[0])
-        imag_path = image_folder + '/' + line.split()[0];
-        resize_f = float(line.split()[1]);
-        if abs(resize_f - 1) >= 0.001:
-          imag = misc.imresize(np.array(Image.open(imag_path).convert('RGB')), resize_f).astype(np.float32);
-        else:
-          imag = np.array(Image.open(imag_path).convert('RGB')).astype(np.float32);
-        X.append(normalize(imag));
-        F.append(imag_path.split('/')[-1]);
-        R.append(resize_f);
-  
-      print 'Tiles loaded.', len(X);
-      yield X, F, R;
-
-  def cnn_pred_mask_ori(self, segmentation_folder):
-    PS = self.PS;
-    step_size = self.config.pred_step_size;
-    gsm = self.gkern(PS, self.config.pred_gkern_sig);
-    #X, F, R = self.load_data(segmentation_folder);
-    counter_mao=0
-    for X, F, R in self.load_data_group_mao(segmentation_folder,10):
-      print('counter_mao: %d'%(counter_mao))
-      counter_mao+=1
-      print 'Scaling factor {}'.format(self.config.pred_scaling);
-      for im_id in range(len(X)):
-        time_mao0=time.time()
-        img = X[im_id];
-        outf = segmentation_folder + '/' + F[im_id][:-4] + "_pred.png";
-        if os.path.exists(outf):
-          print('skip: %s'%(F[im_id][:-4] + "_pred.png"))
-          continue
-        else:
-          print 'Segmenting {}'.format(F[im_id]);
-        resize_f = R[im_id] * self.config.pred_scaling;
-  
-        pred_m = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32);
-        num_m = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32);
-  
-        for mir in range(2):
-          img = img[::-1, :, :]
-          pred_m = pred_m[::-1, :];
-          num_m = num_m[::-1, :];
-          for rot in range(4):
-            img = np.swapaxes(img, 0, 1)[::-1, :, :];
-            pred_m = np.swapaxes(pred_m, 0, 1)[::-1, :];
-            num_m = np.swapaxes(num_m, 0, 1)[::-1, :];
-            for x in range(0, pred_m.shape[0]-PS+1, step_size) + [pred_m.shape[0]-PS]:
-              nimg = len(range(0, pred_m.shape[1]-PS+1, step_size) + [pred_m.shape[1]-PS]);
-              net_inputs = np.zeros(shape=(nimg, img.shape[2], PS, PS), dtype=np.float32);
-              yind = 0;
-              for y in range(0, pred_m.shape[1]-PS+1, step_size) + [pred_m.shape[1]-PS]:
-                net_inputs[yind, :, :, :] = img[x:x+PS, y:y+PS, :].transpose();
-                yind += 1;
-  
-              feed_dict = {
-                self.model.test_patch_normalized: np.transpose(net_inputs, [0,2,3,1]),
-              }
-  
-              res_discrim = self.model.test_learner_patch(self.sess, feed_dict, None, with_output=True)
-  
-              net_outputs = res_discrim['output']
-              net_outputs = np.squeeze(net_outputs, axis=3);
-              yind = 0;
-              for y in range(0, pred_m.shape[1]-PS+1, step_size) + [pred_m.shape[1]-PS]:
-                pred_m[x:x+PS, y:y+PS] += net_outputs[yind, :, :].transpose() * gsm;
-                num_m[x:x+PS, y:y+PS] += gsm;
-                yind += 1;
-        
-        print('size:({},{},{}) time: {}'.format(img.shape[0], img.shape[1],img.shape[2],str(time_mao0-time.time())))
-        pred_m /= num_m;
-        if abs(resize_f - 1) >= 0.001:
-          pred_m = misc.imresize(pred_m, 1.0/resize_f);
-        imwrite(outf, pred_m);
-        
   def cnn_pred_mask(self, segmentation_folder):
     PS = self.PS;
     step_size = self.config.pred_step_size;
     gsm = self.gkern(PS, self.config.pred_gkern_sig);
-    #X, F, R = self.load_data(segmentation_folder);
-    counter_mao=0
-    for X, F, R in self.load_data_group_mao(segmentation_folder,10):
-      print('counter_mao: %d'%(counter_mao))
-      counter_mao+=1
-      print 'Scaling factor {}'.format(self.config.pred_scaling);
-      for im_id in range(len(X)):
-        time_mao0=time.time()
-        img = X[im_id];
-        outf = segmentation_folder + '/' + F[im_id][:-4] + "_pred.png";
-        if os.path.exists(outf):
-          print('skip: %s'%(F[im_id][:-4] + "_pred.png"))
-          continue
-        else:
-          print 'Segmenting {}'.format(F[im_id]);
-        resize_f = R[im_id] * self.config.pred_scaling;
-  
-        pred_m = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32);
-        num_m = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32);
-        '''
-        for mir in range(2):
-          img = img[::-1, :, :]
-          pred_m = pred_m[::-1, :];
-          num_m = num_m[::-1, :];
-          for rot in range(4):
-            img = np.swapaxes(img, 0, 1)[::-1, :, :];
-            pred_m = np.swapaxes(pred_m, 0, 1)[::-1, :];
-            num_m = np.swapaxes(num_m, 0, 1)[::-1, :];
-        '''
-        #img = np.swapaxes(img, 0, 1);
-        #pred_m = np.swapaxes(pred_m, 0, 1);
-        #num_m = np.swapaxes(num_m, 0, 1);
-        for x in range(0, pred_m.shape[0]-PS+1, step_size) + [pred_m.shape[0]-PS]:
-          nimg = len(range(0, pred_m.shape[1]-PS+1, step_size) + [pred_m.shape[1]-PS]);
-          net_inputs = np.zeros(shape=(nimg, img.shape[2], PS, PS), dtype=np.float32);
-          yind = 0;
-          for y in range(0, pred_m.shape[1]-PS+1, step_size) + [pred_m.shape[1]-PS]:
-            net_inputs[yind, :, :, :] = img[x:x+PS, y:y+PS, :].transpose();
-            yind += 1;
+    gsm[10:-10, 10:-10] *= 10;
+    batch_size = 100;
 
-          feed_dict = {
-            self.model.test_patch_normalized: np.transpose(net_inputs, [0,2,3,1]),
-          }
+    tile_list = segmentation_folder + '/image_resize_list.txt';
+    lines = [line.strip() for line in open(tile_list, 'r')];
+    lines = lines[self.par_code::self.par_max];
 
-          res_discrim = self.model.test_learner_patch(self.sess, feed_dict, None, with_output=True)
+    for line in lines:
+      X, F, R = self.load_data(segmentation_folder, line);
 
-          net_outputs = res_discrim['output']
-          net_outputs = np.squeeze(net_outputs, axis=3);
-          yind = 0;
-          for y in range(0, pred_m.shape[1]-PS+1, step_size) + [pred_m.shape[1]-PS]:
-            pred_m[x:x+PS, y:y+PS] += net_outputs[yind, :, :].transpose() * gsm;
-            num_m[x:x+PS, y:y+PS] += gsm;
-            yind += 1;
-        
-        print('size:({},{},{}) time: {}'.format(img.shape[0], img.shape[1],img.shape[2],str(time_mao0-time.time())))
-        pred_m /= num_m;
-        if abs(resize_f - 1) >= 0.001:
-          pred_m = misc.imresize(pred_m, 1.0/resize_f);
-        imwrite(outf, pred_m);
+      outf = segmentation_folder + '/' + F[:-4] + "_pred.png";
+      if os.path.isfile(outf):
+          continue;
+
+      print 'Segmenting {}'.format(F);
+      img = X;
+      resize_f = R * self.config.pred_scaling;
+
+      pred_m = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32);
+      num_m = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32) + 1e-6;
+
+      net_inputs = [];
+      xy_indices = [];
+      for x in range(0, pred_m.shape[0]-PS+1, step_size) + [pred_m.shape[0]-PS,]:
+        for y in range(0, pred_m.shape[1]-PS+1, step_size) + [pred_m.shape[1]-PS,]:
+          pat = img[x:x+PS, y:y+PS, :]
+          wh = pat[...,0].std() + pat[...,1].std() + pat[...,2].std();
+          if wh >= 0.28:
+            net_inputs.append(pat.transpose());
+            xy_indices.append((x, y));
+
+          if len(net_inputs)>=batch_size or (x==pred_m.shape[0]-PS and y==pred_m.shape[1]-PS and len(net_inputs)>0):
+            feed_dict = {
+              self.model.test_patch_normalized: np.transpose(np.array(net_inputs), [0,2,3,1]),
+            }
+            res_discrim = self.model.test_learner_patch(self.sess, feed_dict, None, with_output=True);
+            net_outputs = res_discrim['output'][..., 0];
+            for outi, (x, y) in enumerate(xy_indices):
+              pred_m[x:x+PS, y:y+PS] += net_outputs[outi, :, :].transpose() * gsm;
+              num_m[x:x+PS, y:y+PS] += gsm;
+            net_inputs = [];
+            xy_indices = [];
+
+      pred_m /= num_m;
+      if abs(resize_f-1) >= 0.001:
+        pred_m = misc.imresize(pred_m, 1.0/resize_f);
+      imwrite(outf, pred_m);
+
 
   def _inject_summary(self, tag, feed_dict, step):
     summaries = self.sess.run(self.summary_ops[tag], feed_dict)
