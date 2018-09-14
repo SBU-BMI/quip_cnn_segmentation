@@ -35,6 +35,9 @@ class Trainer(object):
     self.PS = config.input_width
 
     self.load_path = config.load_path
+    self.seg_path = config.seg_path
+    self.par_code = config.par_code
+    self.par_max = config.par_max
     self.K_d = config.K_d
     self.K_g = config.K_g
     self.K_l = config.K_l
@@ -201,11 +204,7 @@ class Trainer(object):
       train_learner()
 
   def test(self):
-    mao_file=self.config.mao_file
-    name=os.getcwd()+'/segmentation_test_images_'+mao_file+'/'
-    if not os.path.exists(name):
-      os.mkdir(name)
-    self.cnn_pred_mask(name)
+    self.cnn_pred_mask(self.seg_path)
 
   def gkern(self, kernlen=21, nsig=3):
     """Returns a 2D Gaussian kernel array."""
