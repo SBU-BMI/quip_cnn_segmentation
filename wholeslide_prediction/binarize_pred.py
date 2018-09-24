@@ -10,14 +10,14 @@ import concurrent.futures
 max_workers=8;
 #slide name
 slide=sys.argv[1]
-#path to CNN prediction output
+#path for input files: path to CNN prediction masks from step 2 :2_test_seer_paral_release.sh
 path1='./segmentation_test_images_'+slide+'/'
-#path for saving binarized prediction mask
+#path for output files: path for saving output binarized prediction mask
 savepath='./results/'+slide+'/segmask/'
-#final csv files saves in csvsavepath
+#path for output files: final output csv files and json files saves in csvsavepath
 csvsavepath='./results/'+slide+'/csv/'
 maskpath=savepath
-#path to rgb tiles
+#path for input files: path to rgb tiles
 rgbpath='./tiles/'+slide+'/'
 #Path to Yi's code
 cpp='/nfs/data01/shared/mazhao6/earth/yi_ori/pathomics_analysis/nucleusSegmentation/app/computeFeaturesCombined'
