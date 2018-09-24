@@ -8,15 +8,18 @@ import glob
 import concurrent.futures
 
 max_workers=8;
-
+#slide name
 slide=sys.argv[1]
-
+#path to CNN prediction output
 path1='./segmentation_test_images_'+slide+'/'
-savepath='./results/'+slide+'/segmask/'  
+#path for saving binarized prediction mask
+savepath='./results/'+slide+'/segmask/'
+#final csv files saves in csvsavepath
 csvsavepath='./results/'+slide+'/csv/'
 maskpath=savepath
+#path to rgb tiles
 rgbpath='./tiles/'+slide+'/'
-
+#Path to Yi's code
 cpp='/nfs/data01/shared/mazhao6/earth/yi_ori/pathomics_analysis/nucleusSegmentation/app/computeFeaturesCombined'
 
 if not os.path.exists('./results/'):
