@@ -340,8 +340,12 @@ def main(unused_argv):
     tile_height = len (tile)
     print ("Tile dims are %ix%i"%(tile_width, tile_height))
 
-    x_step = y_step = 75
+    x_step = y_step = 75  #Size of patches that the model knows how to process (should be 75x75)
+    x_jump = y_jump = 40 #Jump from one prediction to the next (should be smaller than x_step, y_step
+
     mask = np.zeros ((tile_width, tile_height, 1))
+    counts = np.zeros ((tile_width, tile_height, 1))
+    ones = np.ones ((x_step, y_step, 1))
 
     print ("Mask dims are ", mask.shape)
 
@@ -350,8 +354,8 @@ def main(unused_argv):
     in_files = [] #This is unused, but structurally required
 
     #Loop over chunks
-    for x_offset in range (0, tile_width, x_step):
-      for y_offset in range (0, tile_height, y_step):
+    for x_offset in range (0, tile_width, x_jump):
+      for y_offset in range (0, tile_height, y_jump):
 
         if x_offset + x_step > tile_width:
           x_offset = tile_width - x_step
@@ -362,10 +366,10 @@ def main(unused_argv):
         # Add chunk to the input
         images.append (tile[x_offset:x_offset+x_step,y_offset:y_offset+y_step])
         in_files.append ("dummy")
+        print ("Queuing chunk at %i,%i"%(x_offset,y_offset))
 
 
     #Apply predictions
-    print ("Processing chunk at %i,%i"%(x_offset,y_offset))
     predictions = segmentation_estimator.predict(
     input_fn=tf.estimator.inputs.numpy_input_fn(
       {
@@ -376,8 +380,8 @@ def main(unused_argv):
 
 
     #Loop over chunks again to process the predictions
-    for x_offset in range (0, tile_width, x_step):
-      for y_offset in range (0, tile_height, y_step):
+    for x_offset in range (0, tile_width, x_jump):
+      for y_offset in range (0, tile_height, y_jump):
 
         if x_offset + x_step > tile_width:
           x_offset = tile_width - x_step
@@ -385,12 +389,29 @@ def main(unused_argv):
         if y_offset + y_step > tile_height:
           y_offset = tile_height - y_step
 
-        mask[x_offset:x_offset+x_step,y_offset:y_offset+y_step] = next(predictions)['probabilities']
+#DEBUG:
+#        np.set_printoptions(threshold=np.nan)
+#        print (next(predictions)['probabilities'])
+#        return
 
+        mask[x_offset:x_offset+x_step,y_offset:y_offset+y_step] = \
+             mask[x_offset:x_offset+x_step,y_offset:y_offset+y_step] + next(predictions)['probabilities']
+        counts[x_offset:x_offset+x_step,y_offset:y_offset+y_step] = \
+             counts[x_offset:x_offset+x_step,y_offset:y_offset+y_step] + ones
+        print ("Processing chunk at %i,%i"%(x_offset,y_offset))
+
+    #np.set_printoptions(threshold=np.nan)
+
+    print ("Printing mask slice")
+
+    print (mask[0:100,0:100])
+    #print (counts[0:100,0:100])
+    mask = mask / counts
 
     #print (mask)
 
     #Write predictions to mask file
+    print ("Saving file")
     imsave ("predictions/44001_44001_4000_4000_0.5_pred.png", mask[:,:,0])
 
 
@@ -435,8 +456,7 @@ def main(unused_argv):
         tile_mask = list(predictions)[0]['probabilities']
         mask[x_offset:x_offset+x_step,y_offset:y_offset+y_step] = tile_mask
 
-
-    print (mask)
+    #print (mask[0:100,0:100])
 
     #Write predictions to mask file
     imsave ("predictions/44001_44001_4000_4000_0.5_pred.png", mask[:,:,0])
