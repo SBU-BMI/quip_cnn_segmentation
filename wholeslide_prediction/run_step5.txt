@@ -1,0 +1,3 @@
+//copy segment result to eagle cluster storage folder
+cd to nfs002:/data/shared/cnn_prediction/
+rsync -r /home/bwang/seer_new/wholeslide_prediction/results/ results/
