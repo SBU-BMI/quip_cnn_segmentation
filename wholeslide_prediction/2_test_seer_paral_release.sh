@@ -22,7 +22,7 @@ python resize_list.py ${DATASET_FOLDER}
 CUDA_VISIBLE_DEVICES=${GPU} \
 LD_LIBRARY_PATH="/home/lehhou/my_libc_env/lib/x86_64-linux-gnu/:/home/lehhou/my_libc_env/usr/lib64/:$LD_LIBRARY_PATH" \
         /home/lehhou/my_libc_env/lib/x86_64-linux-gnu/ld-2.17.so /home/lehhou/anaconda2/bin/python -u main.py \
-        --is_train=False --load_path=${MODEL} --par_code=${STEP} --par_max=${INDEX} \
+        --is_train=False --load_path=${MODEL} --par_code=${PAR_CODE} --par_max=${PAR_MAX} \
         --seg_path=./${DATASET_FOLDER}/ --pred_scaling=0.5 \
         &> log.wholeslide_${DATASET}_${PAR_CODE}_${PAR_MAX}.txt
 
