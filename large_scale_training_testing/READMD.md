@@ -4,11 +4,11 @@
 This training code cannot be run on eagle, due to large GPU memory requirements.  
 Training input (I put some dummy data in): 
 
-Real patch and masks (400x400 pixels):  
+Real patch and masks (400x400 patches extracted by real-training-data-extraction/):  
 ./data/nuclei/image_sup  
 ./data/nuclei/mask_sup 
 
-Synthetic patch, masks, reference real patches, and real patch pairs (400x400 pixels):  
+Synthetic patch, masks, reference real patches, and real patch pairs (400x400 patches extracted by training-data-synthesis):  
 ./data/nuclei/image  
 ./data/nuclei/mask  
 ./data/nuclei/real  
