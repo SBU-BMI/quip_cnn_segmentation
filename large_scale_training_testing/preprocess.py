@@ -23,10 +23,9 @@ def stain_normalized_tiling(slide_name, patch_size, do_not_read_image=False):
     try:
         oslide = openslide.OpenSlide(slide_name)
         if openslide.PROPERTY_NAME_MPP_X not in oslide.properties:
-            print 'Error in {}: MPP unknown'.format(slide_name)
-            raise Exception('{}: MPP unknown'.format(slide_name))
-            return
-        mpp = float(oslide.properties[openslide.PROPERTY_NAME_MPP_X])
+            mpp = 0.25
+        else:
+            mpp = float(oslide.properties[openslide.PROPERTY_NAME_MPP_X])
         if mpp < 0.375:
             scale_factor = 1
         else:
