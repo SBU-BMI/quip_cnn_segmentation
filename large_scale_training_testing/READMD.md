@@ -26,6 +26,5 @@ Note: you need to understand run_wsi_seg.sh before running it.
 It first copies svs files from a remote host, then runs CNN to generate csv and json files,  
 then it copies the resulting files to a remote host. 
 
-The python program does tiling, detection and segmentation, csv and json file generation.
-You can use visual_seg_polygons.py to visualize polygons overlayed with segmentation results.
-
+The python program does everything: tiling, detection and segmentation, csv and json file generation.
+You can use visual_seg_polygons.py to visualize polygons overlayed with segmentation results.  
