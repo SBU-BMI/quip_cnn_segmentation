@@ -8,17 +8,21 @@ from sys import stdout
 from os.path import isfile, join
 from my_canny import canny_edge_on_mask
 from scipy import ndimage
+from scipy import stats
 
 class Mask2Image:
     def __init__(self, tile_path):
         self.tile_path = tile_path;
         self.paths = [f for f in listdir(tile_path) if isfile(join(tile_path, f))];
 
-    def blur_mask(self, mask, radius):
+    def rand_blur_mask(self, mask, radius):
         filt = np.random.random((radius, radius)) + 5;
         filt = (filt / np.sum(filt)).astype(np.float32);
         mask = ndimage.convolve(mask, filt);
         return mask;
+
+    def gaussian_blur(self, im, sigma):
+        return ndimage.filters.gaussian_filter(im, sigma, mode='mirror')
 
     def rand_blur_and_change_intensity(self, im):
         if np.random.rand() < 0.5:
@@ -35,7 +39,7 @@ class Mask2Image:
         b = np.array(Image.fromarray((a*255).astype(np.uint8)).resize((im.shape[0], im.shape[1])));
         c = b.astype(np.float32) / 255.0;
         d = 0.66*(c-0.5) + 1.0;
-        e = self.blur_mask(d, im.shape[0]//5);
+        e = self.rand_blur_mask(d, im.shape[0]//5);
 
         return im*e;
 
@@ -46,6 +50,13 @@ class Mask2Image:
         adj_magn = np.random.uniform(1-adj_range, 1+adj_range, (1, 1, 3)).astype(np.float32);
         img = np.clip((img.astype(np.float32)-rgb_mean)*adj_magn + rgb_mean +
                 np.random.uniform(-1.0, 1.0, (1, 1, 3))*adj_add, 0.1, 249.9);
+        return img;
+
+    def add_h_color(self, img):
+        hed = rgb2hed(img / 255.0)
+        hed[..., 0] += np.random.rand() * 0.04
+        img = hed2rgb(hed)
+        img = np.clip(img * 255, 0, 255)
         return img;
 
     def interpolate_mask(self, mask, radius):
@@ -89,39 +100,36 @@ class Mask2Image:
         nuc_texture = nuc_texture[x:x+size0, y:y+size1].copy();
 
         if only_want_nuc_texture:
-            return True, True, True, True, True, True, nuc_texture, True;
+            return True, True, True, True, True, True, True, nuc_texture, True;
 
-        dense_lvl = 0.0;
         hed_mean = np.mean(hed[:,:,0]);
-        if hed_mean > -1.05:
-            return False, False, False, False, False, False, False, False;
-        elif hed_mean > -1.10:
-            nuc_color_per, nuc_map_per, dense_lvl = 69, 65, 3.0;
-        elif hed_mean > -1.15:
-            nuc_color_per, nuc_map_per, dense_lvl = 74, 70, 2.0;
-        elif hed_mean > -1.20:
-            nuc_color_per, nuc_map_per, dense_lvl = 80, 75, 1.0;
-        elif hed_mean > -1.25:
-            nuc_color_per, nuc_map_per, dense_lvl = 85, 80, 0.0;
-        elif hed_mean > -1.28:
-            nuc_color_per, nuc_map_per, dense_lvl = 91, 86, -1.0;
-        else:
-            return False, False, False, False, False, False, False, False;
+        if hed_mean < -1.33 or hed_mean > -1.1:
+            return False, False, False, False, False, False, False, False, False;
+
+        gray = (255 * (hed[:,:,0] - hed[:,:,0].min()) / (hed[:,:,0].max() - hed[:,:,0].min())).astype(np.uint8);
+        nuc_color_thr, thresholded = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU);
+        nuc_color_thr_per = stats.percentileofscore(gray.flatten(), nuc_color_thr)
+        nuc_color_per = 100 - (100 - nuc_color_thr_per) * 0.92
+        nuc_map_per = 100 - (100 - nuc_color_thr_per) * 1.08
+        dense_lvl = (thresholded > 0).sum() / 0.06 / thresholded.size
+
         to_map_mask = (hed[:,:,0] > np.percentile(hed[:,:,0], nuc_map_per));
-        to_map_mask = (self.blur_mask(to_map_mask.astype(np.float32), 7) > 0.225);
+        to_map_mask = (self.gaussian_blur(to_map_mask.astype(np.float32), 0.5) > 0.50);
 
         nucl_color_mask = (hed[:,:,0] > np.percentile(hed[:,:,0], nuc_color_per)) * \
                           (hed[:,:,0] < np.percentile(hed[:,:,0], 99));
         nucl_color = [np.mean(full_tile[:,:,0][nucl_color_mask]), \
                       np.mean(full_tile[:,:,1][nucl_color_mask]), \
                       np.mean(full_tile[:,:,2][nucl_color_mask])];
-        noise_color_mask = (hed[:,:,0] > np.percentile(hed[:,:,0], nuc_color_per-18)) * \
-                          (hed[:,:,0] < np.percentile(hed[:,:,0], nuc_color_per-1));
+        noise_color_mask = (hed[:,:,0] > np.percentile(hed[:,:,0],
+                                (nuc_color_per+35)//2 - np.random.randint(0,3) - 25)) * \
+                           (hed[:,:,0] < np.percentile(hed[:,:,0],
+                                (nuc_color_per+35)//2 - np.random.randint(0,3) - 12));
         noise_color = [np.mean(full_tile[:,:,0][noise_color_mask]), \
                        np.mean(full_tile[:,:,1][noise_color_mask]), \
                        np.mean(full_tile[:,:,2][noise_color_mask])];
         if np.min(nucl_color) > 100:
-            return False, False, False, False, False, False, False, False;
+            return False, False, False, False, False, False, False, False, False;
 
         x, y, fx, fy = self.sample_xy_fxfy(full_tile.shape[0]-size0, full_tile.shape[1]-size1, size0, size1);
         cyto_tile = cv2.inpaint(full_tile[x:x+size0, y:y+size1, :], \
@@ -135,19 +143,20 @@ class Mask2Image:
         # DEBUG
         ####################
 
+        source_tl = full_tile[x:x+size0, y:y+size1, :].copy();
         full_tile = full_tile[fx:fx+size0, fy:fy+size1, :];
-        return True, dense_lvl, full_tile, cyto_tile, nucl_color, noise_color, nuc_texture, full_tile_path;
+        return True, dense_lvl, full_tile, cyto_tile, source_tl, nucl_color, noise_color, nuc_texture, full_tile_path;
 
     def draw_random_texture(self, size0, size1):
         success = False;
         while not success:
-            success, dense_lvl, full_tile, cyto_tile, nucl_color, noise_color, nuc_texture1, full_tile_path = \
+            success, dense_lvl, full_tile, cyto_tile, source_tl, nucl_color, noise_color, nuc_texture1, full_tile_path = \
                     self.draw_random_texture_try(False, size0, size1);
         success = False;
         while not success:
-            success, dense_lvl, _, _, _, _, nuc_texture2, _ = \
+            success, dense_lvl, _, _, _, _, _, nuc_texture2, _ = \
                     self.draw_random_texture_try(True, size0, size1);
-        return dense_lvl, (full_tile, cyto_tile, nucl_color, noise_color, nuc_texture1, nuc_texture2), full_tile_path;
+        return dense_lvl, (full_tile, cyto_tile, source_tl, nucl_color, noise_color, nuc_texture1, nuc_texture2), full_tile_path;
 
     def sample_overlap(self, x, y, fx, fy, xlen, ylen):
         if fx <= x and x <= fx+xlen and fy <= y and y <= fy+ylen:
@@ -177,23 +186,26 @@ class Mask2Image:
         nuc_texture_transpar = (nuc_texture_transpar - np.min(nuc_texture_transpar)) \
                 / (np.max(nuc_texture_transpar) - np.min(nuc_texture_transpar)) + salt_pep;
 
-        if average_nucl_size < 1100.0:
-            transpar_per = 0.0;
+        if average_nucl_size < 800.0:
+            transpar_per = np.random.rand() * 15;
         elif average_nucl_size > 2400.0:
-            transpar_per = 10.0 + np.random.rand() * 30;
+            transpar_per = 10.0 + np.random.rand() * 42;
         elif np.random.rand() < 0.40:
-            transpar_per = 0.0;
+            transpar_per = np.random.rand() * 15;
         else:
-            transpar_per = 0.0 + np.random.rand() * 30;
+            transpar_per = 0.0 + np.random.rand() * 42;
         nuc_texture_transpar = (nuc_texture_transpar > np.percentile(nuc_texture_transpar, transpar_per)).astype(np.uint8);
 
         mask_edge = canny_edge_on_mask(((mask[:,:,0]>0).astype(np.uint8) * 255).astype(np.uint8));
-        if transpar_per > 10 and np.random.rand() < 0.45:
+        # Thicken mask edge
+        if transpar_per > 10 and transpar_per < 30 and np.random.rand() < 0.30:
             mask_edge = mask_edge + (mask[:,:,0]>0) - \
-                (self.blur_mask((mask[:,:,0]>0).astype(np.float32), np.random.randint(low=5, high=17)) > 0.9999);
+                (self.rand_blur_mask((mask[:,:,0]>0).astype(np.float32), np.random.randint(low=5, high=17)) > 0.9999);
 
-        if transpar_per > 20:
-            mask_edge *= (np.random.random((mask.shape[0], mask.shape[1])) > 0.0+0.20*np.random.rand());
+        # Drop random pixels on mask edge
+        if transpar_per >= 20:
+            mask_edge *= (np.random.random((mask.shape[0], mask.shape[1])) > 0.0+0.30*np.random.rand());
+
         mask_edge = np.repeat(mask_edge[..., np.newaxis], 3, axis=2);
 
         rr = np.random.rand();
@@ -202,13 +214,19 @@ class Mask2Image:
                 mask_inter_radius = 7;
             else:
                 mask_inter_radius = 9;
-        else:
-            if rr < 0.10 or average_nucl_size < 700.0:
+        elif transpar_per < 20:
+            if rr < 0.05 or average_nucl_size < 700.0:
                 mask_inter_radius = 3;
-            elif rr < 0.9:
+            elif rr < 0.70:
                 mask_inter_radius = 5;
             else:
                 mask_inter_radius = 7;
+        else:
+            if rr < 0.10:
+                mask_inter_radius = 3;
+            else:
+                mask_inter_radius = 5;
+
         mixed_mask = mask * nuc_texture_transpar[..., np.newaxis] + mask_edge;
         recall_mask = (np.random.random((mask.shape[0]//5, mask.shape[1]//5))*255).astype(np.uint8);
         recall_mask = misc.imresize(recall_mask, (mask.shape[0], mask.shape[1]));
@@ -221,16 +239,16 @@ class Mask2Image:
         return intp_nucl_mask;
 
     def mask_to_mixing_mask_clutered(self, mask, nuc_texture_transpar, average_nucl_size):
-        salt_pep = (0.10 + 0.30*np.random.rand()) * np.random.random((mask.shape[0], mask.shape[1]));
+        salt_pep = (0.20 + 0.30*np.random.rand()) * np.random.random((mask.shape[0], mask.shape[1]));
         nuc_texture_transpar = (nuc_texture_transpar - np.min(nuc_texture_transpar)) \
                 / (np.max(nuc_texture_transpar) - np.min(nuc_texture_transpar)) + salt_pep;
-        transpar_per = 70;
+        transpar_per = 85;
         nuc_texture_transpar = (nuc_texture_transpar > np.percentile(nuc_texture_transpar, transpar_per)).astype(np.uint8);
         mask = mask * nuc_texture_transpar[..., np.newaxis];
         rr = np.random.rand();
         if rr < 0.60:
             mask_inter_radius = 3;
-        elif rr < 0.90:
+        elif rr < 0.98:
             mask_inter_radius = 5;
         else:
             mask_inter_radius = 7;
@@ -243,18 +261,28 @@ class Mask2Image:
         nucl[:, :, 0] *= nucl_color[0];
         nucl[:, :, 1] *= nucl_color[1];
         nucl[:, :, 2] *= nucl_color[2];
-        nucl[:, :, 0] +=  6.4*(np.random.random((nucl.shape[0], nucl.shape[1]))-0.5);
-        nucl[:, :, 1] +=  5.2*(np.random.random((nucl.shape[0], nucl.shape[1]))-0.5);
-        nucl[:, :, 2] += 10.4*(np.random.random((nucl.shape[0], nucl.shape[1]))-0.5);
+        nucl[:, :, 0] += 3.2*(np.random.random((nucl.shape[0], nucl.shape[1]))-0.5);
+        nucl[:, :, 1] += 2.6*(np.random.random((nucl.shape[0], nucl.shape[1]))-0.5);
+        nucl[:, :, 2] += 5.2*(np.random.random((nucl.shape[0], nucl.shape[1]))-0.5);
         nucl[:, :, 0] = self.rand_blur_and_change_intensity(nucl[:, :, 0]);
         nucl[:, :, 1] = self.rand_blur_and_change_intensity(nucl[:, :, 1]);
         nucl[:, :, 2] = self.rand_blur_and_change_intensity(nucl[:, :, 2]);
         return nucl;
 
-    def go(self, mask, noise_mask, noise2_mask, textures, average_nucl_size):
-        full_tile, cyto_tile, nucl_color, noise2_color, nuc_texture1, nuc_texture2 = textures;
+    def get_cyto_mask(self, cyto):
+        step = cyto.shape[0]//13;
+        tissue_mask = np.zeros((cyto.shape[0], cyto.shape[1]), dtype=np.float32);
+        for x in range(0, len(cyto)-1, step):
+            for y in range(0, len(cyto)-1, step):
+                patlet = cyto[x:x+step, y:y+step, :];
+                tissue_mask[x:x+step, y:y+step] = patlet.std(axis=(0,1)).mean();
+        tissue_mask = ndimage.convolve(tissue_mask, np.ones((3,3), dtype=np.float32)/9.0);
+        return (tissue_mask >= 8.0)[..., np.newaxis]
 
-        cyto = self.aug_color(cyto_tile, mag=0.20);
+    def go(self, mask, noise_mask, noise2_mask, textures, average_nucl_size):
+        full_tile, cyto_tile, source_tl, nucl_color, noise2_color, nuc_texture1, nuc_texture2 = textures;
+
+        cyto = self.add_h_color(self.aug_color(cyto_tile, mag=0.10));
         ########################
         # DEBUG
         #cyto = self.aug_color(cyto_tile, mag=0.0);
@@ -262,7 +290,7 @@ class Mask2Image:
         ########################
 
         nucl = self.get_nucl_color_map(nuc_texture1, nucl_color);
-        nucl = self.aug_color(nucl, mag=0.20);
+        nucl = self.aug_color(nucl, mag=0.10);
         intp_nucl_mask = self.mask_to_mixing_mask(mask, nuc_texture2.copy(), average_nucl_size, more_blur=False);
         ########################
         # DEBUG
@@ -292,7 +320,7 @@ class Mask2Image:
 
         final = cyto * (1-intp_nucl_mask) + nucl * intp_nucl_mask;
 
-        return self.float2image(final), full_tile, \
+        return self.float2image(final), full_tile, source_tl, \
                self.float2image(nucl), self.float2image(cyto), \
                self.float2image(255*intp_nucl_mask);
 

@@ -1,6 +1,6 @@
 function display_image_mask()
 
-for n = 1:1:300
+for n = 0:1:300
     f = figure;
     movegui(f, 'center');
     subplot(1,3,1); imshow(sprintf('output/image/%d.png', n));

@@ -6,13 +6,12 @@ from nuclei_synthesis_40X_online.image_synthesize import get_new_fake_image
 im_no = int(sys.argv[1]);
 im_no_inc = int(sys.argv[2]);
 fid = open('output/fake_info_{}.txt'.format(im_no), 'w');
-while im_no < 200000:
+while im_no < 25000:
     try:
-        image, mask, detect, contour, refer, nucl, cyto, intp_mask, tile_path = get_new_fake_image();
+        image, mask, detect, contour, refer, source, nucl, cyto, intp_mask, tile_path = get_new_fake_image();
     except Exception as e:
         print e;
         continue;
-    #image, mask, detect, contour, refer, nucl, cyto, intp_mask, tile_path = get_new_fake_image();
     mask = (mask>0).astype(np.uint8);
     detect = (detect>0).astype(np.uint8);
     contour = (contour>0).astype(np.uint8);
@@ -20,6 +19,7 @@ while im_no < 200000:
 
     Image.fromarray(image).save('./output/image/{}.png'.format(im_no));
     Image.fromarray(refer).save('./output/refer/{}.png'.format(im_no));
+    #Image.fromarray(source).save('./output/source/{}.png'.format(im_no));
     Image.fromarray(mask).save('./output/mask/{}.png'.format(im_no));
     #Image.fromarray(detect).save('./output/detect/{}.png'.format(im_no));
     #Image.fromarray(contour).save('./output/contour/{}.png'.format(im_no));
