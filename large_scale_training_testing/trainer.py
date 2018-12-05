@@ -12,6 +12,7 @@ from scipy.misc import imresize
 from layers import normalize
 import sys
 import glob
+import traceback
 import random
 from glob import iglob
 
@@ -237,7 +238,8 @@ class Trainer(object):
     for wsi, image_id in (svs_list + tif_list):
       try:
         self.cnn_pred_mask(wsi, image_id)
-      except:
+      except Exception as e:
+        print traceback.format_exc()
         print 'Segmentation failed for {}'.format(wsi)
         continue
 
@@ -319,6 +321,9 @@ class Trainer(object):
               'max_nucleus_size': self.postprocess_max_nucleus_size,
               }
         self.watershed_manager.add_job(watershed_params)
+
+    self.watershed_manager.add_finisher(os.path.dirname(outf))
+    return
 
   def _inject_summary(self, tag, feed_dict, step):
     summaries = self.sess.run(self.summary_ops[tag], feed_dict)
