@@ -27,8 +27,10 @@ Then, just config run_wsi_seg.sh and run:
 nohup bash run_wsi_seg.sh & 
 
 Note: you need to understand run_wsi_seg.sh before running it.  
-It first copies svs files from a remote host, then runs CNN to generate csv and json files,  
-then it copies the resulting files to a remote host. 
+By default, it assumes that all data is stored under:  
+/data1/wsi_seg_local_data/svs/: the folder holds input WSIs (.svs or .tif)  
+/data1/wsi_seg_local_data/logs/: the folder holds logs files  
+/data1/wsi_seg_local_data/seg_tiles/: the folder holds segmentation outputs 
 
 The python program does everything: tiling, detection and segmentation, csv and json file generation.
 You can use visual_seg_polygons.py to visualize polygons overlayed with segmentation results.  
