@@ -39,8 +39,8 @@ mkdir -p ${INPUT_F} ${OUTPUT_F} ${LOG_F}
 # If you have images (.svs or .tif) under ${INPUT_F}/ already, you can just leave this line commented out
 #scp nfs001:/data/tcga_data/tumor/gbm/TCGA-??-????-???-??-DX8.*.svs ${INPUT_F}/
 
-# Call this only if you work on eagle
 if [ ${ON_EAGLE} -eq 1 ]; then
+    # Call this only if you work on eagle
     module purge
     module load cuda80
     module load openslide/3.4.0
