@@ -26,7 +26,10 @@ DESCRIPTION_IN_JSON=seg
 ONLY_POSTPROCESS=False
 ################################
 
+# The root of all of your data
+# WSIs, log files, and outputs will be stored under this folder
 LOCAL_DATA_ROOT=/data1/wsi_seg_local_data
+
 INPUT_F=${LOCAL_DATA_ROOT}/svs/
 OUTPUT_F=${LOCAL_DATA_ROOT}/seg_tiles/
 LOG_F=${LOCAL_DATA_ROOT}/logs/
