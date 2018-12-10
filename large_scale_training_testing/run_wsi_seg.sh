@@ -1,16 +1,28 @@
 #!/bin/bash
 
 ################################
+# GPU used for the CNN. If you have 4 GPUs, GPU_ID could be 0, 1, 2, or 3
+# Check your GPU availability using nvidia-smi
 GPU_ID=1
+# Do not change this. It will be looking for ./logs/model_trained/
 MODEL=model_trained
+# If you run this pipelien on eagle, keep ON_EAGLE=1, Otherwise, keep ON_EAGLE=0
 ON_EAGLE=1
+# Number of processes for postprocessing (watershed, generating json, csv files etc.)
 POSTPROCESS_NPROC=12
+# Segmentation threshold (0.0 ~ 1.0). A lower value results in more segmented nuclear material
 POSTPROCESS_SEG_THRES=0.33
+# Detection threshold (0.0 ~ 1.0). A lower value results in more segmented nuclei
 POSTPROCESS_DET_THRES=0.07
+# Window size for postprocessing each nuclei
 POSTPROCESS_WIN_SIZE=200
+# Minimum size of a nucleus. A segmented object smaller than this will be consider as noise and discarded
 POSTPROCESS_MIN_NUCLEUS_SIZE=20
+# Maximum size of a nucleus. A segmented object bigger than this will be consider as noise and discarded
 POSTPROCESS_MAX_NUCLEUS_SIZE=65536
+# Description burn into the json meta faile
 DESCRIPTION_IN_JSON=seg
+# If you already have all segmentation results (*_SEG.png), you might want to do postprocessing only
 ONLY_POSTPROCESS=False
 ################################
 
@@ -21,7 +33,8 @@ LOG_F=${LOCAL_DATA_ROOT}/logs/
 mkdir -p ${INPUT_F} ${OUTPUT_F} ${LOG_F}
 
 # Prepare input
-scp nfs001:/data/tcga_data/tumor/gbm/TCGA-??-????-???-??-DX8.*.svs ${INPUT_F}/
+# If you have images (.svs or .tif) under ${INPUT_F}/ already, you can just leave this line commented out
+#scp nfs001:/data/tcga_data/tumor/gbm/TCGA-??-????-???-??-DX8.*.svs ${INPUT_F}/
 
 # Call this only if you work on eagle
 if [ ${ON_EAGLE} -eq 1 ]; then
@@ -70,7 +83,8 @@ else
 fi
 
 # Relocate output
-ssh nfs001 mkdir -p /data/shared/lehhou/wsi_seg_output/
-scp -r ${OUTPUT_F}/* nfs001:/data/shared/lehhou/wsi_seg_output/
+# You can relocate the output to a remote host by:
+#ssh nfs001 mkdir -p /data/shared/lehhou/wsi_seg_output/
+#scp -r ${OUTPUT_F}/* nfs001:/data/shared/lehhou/wsi_seg_output/
 
 exit 0
