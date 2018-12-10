@@ -7,7 +7,7 @@ from color_norm.color_normalize import reinhard_normalizer
 
 def white_ratio(pat):
     white_count = 0.0
-    total_count = 0.0
+    total_count = 0.001
     for x in range(0, pat.shape[0]-200, 100):
         for y in range(0, pat.shape[1]-200, 100):
             p = pat[x:x+200, y:y+200, :]
