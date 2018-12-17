@@ -18,7 +18,7 @@ def white_ratio(pat):
     return white_count/total_count
 
 
-def stain_normalized_tiling(slide_name, patch_size, do_not_read_image=False):
+def stain_normalized_tiling(slide_name, patch_size, do_actually_read_image=True):
     margin = 5
     try:
         oslide = openslide.OpenSlide(slide_name)
@@ -54,14 +54,14 @@ def stain_normalized_tiling(slide_name, patch_size, do_not_read_image=False):
             if pw_x <= 0 or pw_y <= 0:
                 continue
 
-            if do_not_read_image:
-                patch = Image.new('RGB', (pw_x, pw_y), (255, 255, 255))
-            else:
+            if do_actually_read_image:
                 try:
                     patch = oslide.read_region((x, y), 0, (pw_x, pw_y)).convert('RGB')
                 except:
                     print '{}: exception caught'.format(slide_name)
                     continue
+            else:
+                patch = Image.new('RGB', (pw_x, pw_y), (255, 255, 255))
 
             ori_size0 = patch.size[0]
             ori_size1 = patch.size[1]

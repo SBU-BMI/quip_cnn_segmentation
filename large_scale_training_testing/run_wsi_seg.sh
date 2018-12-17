@@ -3,7 +3,7 @@
 ################################
 # GPU used for the CNN. If you have 4 GPUs, GPU_ID could be 0, 1, 2, or 3
 # Check your GPU availability using nvidia-smi
-GPU_ID=1
+GPU_ID=0
 # Do not change this. It will be looking for ./logs/model_trained/
 MODEL=model_trained
 # If you run this pipelien on eagle, keep ON_EAGLE=1, Otherwise, keep ON_EAGLE=0
@@ -22,8 +22,10 @@ POSTPROCESS_MIN_NUCLEUS_SIZE=20
 POSTPROCESS_MAX_NUCLEUS_SIZE=65536
 # Description burn into the json meta faile
 DESCRIPTION_IN_JSON=seg
+
 # If you already have all segmentation results (*_SEG.png), you might want to do postprocessing only
-ONLY_POSTPROCESS=False
+DO_GPU_PROCESS=True
+DO_CPU_POSTPROCESS=True
 ################################
 
 # The root of all of your data
@@ -65,7 +67,8 @@ if [ ${ON_EAGLE} -eq 1 ]; then
         --postprocess_min_nucleus_size=${POSTPROCESS_MIN_NUCLEUS_SIZE} \
         --postprocess_max_nucleus_size=${POSTPROCESS_MAX_NUCLEUS_SIZE} \
         --method_description=${DESCRIPTION_IN_JSON} \
-        --only_postprocess=False \
+        --do_gpu_process=${DO_GPU_PROCESS} \
+        --do_cpu_postprocess=${DO_CPU_POSTPROCESS} \
         &> ${LOG_F}/log_wsi_seg.txt
 else
     CUDA_VISIBLE_DEVICES=${GPU_ID} \
@@ -81,7 +84,8 @@ else
         --postprocess_min_nucleus_size=${POSTPROCESS_MIN_NUCLEUS_SIZE} \
         --postprocess_max_nucleus_size=${POSTPROCESS_MAX_NUCLEUS_SIZE} \
         --method_description=${DESCRIPTION_IN_JSON} \
-        --only_postprocess=False \
+        --do_gpu_process=${DO_GPU_PROCESS} \
+        --do_cpu_postprocess=${DO_CPU_POSTPROCESS} \
         &> ${LOG_F}/log_wsi_seg.txt
 fi
 

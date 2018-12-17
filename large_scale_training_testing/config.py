@@ -81,7 +81,8 @@ postprocess.add_argument('--postprocess_det_thres', type=float, default=0.07)
 postprocess.add_argument('--postprocess_win_size', type=int, default=200)
 postprocess.add_argument('--postprocess_min_nucleus_size', type=int, default=20)
 postprocess.add_argument('--postprocess_max_nucleus_size', type=int, default=65536)
-postprocess.add_argument('--only_postprocess', type=str2bool, default=False)
+postprocess.add_argument('--do_gpu_process', type=str2bool, default=True)
+postprocess.add_argument('--do_cpu_postprocess', type=str2bool, default=True)
 
 # Misc
 misc_arg = add_argument_group('Misc')

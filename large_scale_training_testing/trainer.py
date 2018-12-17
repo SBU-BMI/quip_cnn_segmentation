@@ -1,7 +1,6 @@
 import os
 import numpy as np
 from tqdm import trange
-import tensorflow as tf
 from tensorflow.contrib.framework.python.ops import arg_scope
 import scipy.stats as st
 import glob
@@ -58,7 +57,13 @@ class Trainer(object):
     self.postprocess_win_size = config.postprocess_win_size
     self.postprocess_min_nucleus_size = config.postprocess_min_nucleus_size
     self.postprocess_max_nucleus_size = config.postprocess_max_nucleus_size
-    self.only_postprocess = config.only_postprocess
+    self.do_gpu_process = config.do_gpu_process
+    self.do_cpu_postprocess = config.do_cpu_postprocess
+
+    if not self.do_gpu_process:
+      return
+
+    import tensorflow as tf
 
     DataLoader = {
         'nuclei': nuclei_data.DataLoader,
@@ -232,8 +237,9 @@ class Trainer(object):
     svs_list = [(f, get_image_id(f)) for f in iglob(self.seg_path + '/*.svs') if os.path.isfile(f)]
     tif_list = [(f, get_image_id(f)) for f in iglob(self.seg_path + '/*.tif') if os.path.isfile(f)]
 
-    self.watershed_manager = MultiProcWatershed(n_proc=self.postprocess_nproc)
-    self.watershed_manager.start()
+    if self.do_cpu_postprocess:
+      self.watershed_manager = MultiProcWatershed(n_proc=self.postprocess_nproc)
+      self.watershed_manager.start()
 
     for wsi, image_id in (svs_list + tif_list):
       try:
@@ -243,7 +249,8 @@ class Trainer(object):
         print 'Segmentation failed for {}'.format(wsi)
         continue
 
-    self.watershed_manager.wait_til_stop()
+    if self.do_cpu_postprocess:
+      self.watershed_manager.wait_til_stop()
 
   def cnn_pred_mask(self, wsi_path, image_id):
     PS = self.config.input_PS_test
@@ -258,7 +265,7 @@ class Trainer(object):
         os.mkdir(outfolder)
 
     for uint8patch, patch_info, wsi_dim in stain_normalized_tiling(
-            wsi_path, 4000, self.only_postprocess):
+            wsi_path, 4000, self.do_gpu_process):
       patch = normalize(uint8patch.astype(np.float32))
       px, py, pw_x, pw_y, ori_size0, ori_size1, mpp, scale_factor = patch_info
       outf = os.path.join(outfolder, '{}_{}_{}_{}_{}_{}_SEG.png'.format(
@@ -269,7 +276,7 @@ class Trainer(object):
         continue;
 
       # Check if skip the CNN step
-      if not self.only_postprocess:
+      if self.do_gpu_process:
         print "CNN segmentation on", outf
 
         pred_m = np.zeros((patch.shape[0], patch.shape[1], 3), dtype=np.float32);
@@ -307,7 +314,7 @@ class Trainer(object):
         #                                  px, py, pw_x, pw_y, mpp, scale_factor))
         #imwrite(he_outf, uint8patch);
 
-      if os.path.isfile(outf):
+      if os.path.isfile(outf) and self.do_cpu_postprocess:
         watershed_params = {
               'in_path': outf,
               'image_id': image_id,
@@ -322,7 +329,8 @@ class Trainer(object):
               }
         self.watershed_manager.add_job(watershed_params)
 
-    self.watershed_manager.add_finisher(os.path.dirname(outf))
+    if self.do_cpu_postprocess:
+      self.watershed_manager.add_finisher(os.path.dirname(outf))
     return
 
   def _inject_summary(self, tag, feed_dict, step):
