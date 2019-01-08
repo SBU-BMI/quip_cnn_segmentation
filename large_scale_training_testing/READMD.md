@@ -20,8 +20,13 @@ You need to have a trained model. One is available on eagle. In the code environ
 cp -r /data01/shared/lehhou/large_scale_training_testing_trained_model/model_trained ./logs/  
 You can also download the trained model online.  
 Note that the model_trained folder should be under ./logs/, not the content. In other words, the directory should look like:  
-ls ./logs/model_trained/model.ckpt-184780.index  
-checkpoint  graph.pbtxt  model.ckpt-184780.data-00000-of-00001  model.ckpt-184780.index  model.ckpt-184780.meta  params.json 
+ls ./logs/model_trained/  
+checkpoint  
+graph.pbtxt  
+model.ckpt-184780.data-00000-of-00001  
+model.ckpt-184780.index  
+model.ckpt-184780.meta  
+params.json 
 
 Then, just config run_wsi_seg.sh and run:  
 nohup bash run_wsi_seg.sh & 
