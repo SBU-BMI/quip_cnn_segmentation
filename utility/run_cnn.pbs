@@ -1,0 +1,139 @@
+#!/bin/bash
+
+#LongQ will tell it to run on compute node
+#PBS -q longq
+# set name of job
+#PBS -N cnn_segment_prediction 
+#PBS -e /home/bwang/temp/logs/pbs/
+#PBS -o /home/bwang/temp/logs/pbs/
+# set the number of nodes and processes per node
+#PBS -l nodes=1:ppn=40
+#PBS -l mem=80Gb
+# mail alert at (b)eginning, (e)nd and (a)bortion of execution
+#PBS -m bea
+# send mail to the following address
+#PBS -M tigerfan7495@gmail.com
+
+echo "-----------------------------------------------------"
+echo "Date: $(date)                     Host:$(hostname)"
+echo "-----------------------------------------------------"
+
+#find availavle GPU ID, if not available, wait until it is available
+module load cuda80;
+GPUID=1
+function getGPU_id()
+{  
+  nvidia-smi|grep "Default"|awk '{print $9}'|awk -F'MiB' '$1<100{print NR-1}'|while read GPUID; 
+  do 
+    echo $GPUID; 
+    break 
+  done
+}
+for (( ; ; ))
+do
+   sleep 100    
+   return_gpuid=$(getGPU_id)   
+   if [[ "$return_gpuid" ]]; 
+     then       
+       GPUID=$return_gpuid
+	     break    
+   fi
+done
+
+#define local temp folder in computing node
+my_home="/data1/bwang"
+cnn_folder="cnn_tmp"
+LOCAL_DATA_ROOT=${my_home}/${cnn_folder}/
+[ -d ${LOCAL_DATA_ROOT} ] || mkdir ${LOCAL_DATA_ROOT}
+
+################################
+GPU_ID=$GPUID
+MODEL=model_trained
+ON_EAGLE=1
+POSTPROCESS_NPROC=12
+POSTPROCESS_SEG_THRES=0.33
+POSTPROCESS_DET_THRES=0.07
+POSTPROCESS_WIN_SIZE=200
+POSTPROCESS_MIN_NUCLEUS_SIZE=20
+POSTPROCESS_MAX_NUCLEUS_SIZE=65536
+DESCRIPTION_IN_JSON=seg
+ONLY_POSTPROCESS=False
+################################
+INPUT_F=${LOCAL_DATA_ROOT}/tif/
+OUTPUT_F=${LOCAL_DATA_ROOT}/seg_tiles/
+LOG_F=${LOCAL_DATA_ROOT}/logs/
+mkdir -p ${INPUT_F} ${OUTPUT_F} ${LOG_F}
+
+
+#get image file id and path from input arguments
+imageid=$image_id
+imagepath=$image_path
+
+# Prepare input
+scp ${imagepath}/${imageid} ${INPUT_F}/
+#scp nfs002:/data/shared/cnn_prediction/images/rutgers-2018-11/001738-000423_2_07_20181018-multires.tif ${INPUT_F}/
+
+# Call this only if you work on eagle
+if [ ${ON_EAGLE} -eq 1 ]; then
+    module purge
+    module load cuda80
+    module load openslide/3.4.0
+    module load extlibs/1.0.0
+    export LIBTIFF_CFLAGS="-I/cm/shared/apps/extlibs/include"
+    export LIBTIFF_LIBS="-L/cm/shared/apps/extlibs/lib -ltiff"
+    export PATH=/home/lehhou/anaconda2/bin:/home/lehhou/cuda-8.0/bin:${PATH}
+    export PYTHONPATH=""
+
+    CUDA_VISIBLE_DEVICES=${GPU_ID} \
+    LD_LIBRARY_PATH=/home/lehhou/my_libc_env/lib/x86_64-linux-gnu:/home/lehhou/my_libc_env/usr/lib64:/home/lehhou/cuda-8.0/lib64:${LD_LIBRARY_PATH} \
+    /home/lehhou/my_libc_env/lib/x86_64-linux-gnu/ld-2.17.so \
+    /home/lehhou/anaconda2/bin/python -u main.py \
+        --is_train=False \
+        --seg_path=${INPUT_F} \
+        --out_path=${OUTPUT_F} \
+        --load_path=${MODEL} \
+        --postprocess_nproc=${POSTPROCESS_NPROC} \
+        --postprocess_seg_thres=${POSTPROCESS_SEG_THRES} \
+        --postprocess_det_thres=${POSTPROCESS_DET_THRES} \
+        --postprocess_win_size=${POSTPROCESS_WIN_SIZE} \
+        --postprocess_min_nucleus_size=${POSTPROCESS_MIN_NUCLEUS_SIZE} \
+        --postprocess_max_nucleus_size=${POSTPROCESS_MAX_NUCLEUS_SIZE} \
+        --method_description=${DESCRIPTION_IN_JSON} \
+        --only_postprocess=False \
+        &> ${LOG_F}/log_wsi_seg.txt
+else
+    CUDA_VISIBLE_DEVICES=${GPU_ID} \
+    python -u main.py \
+        --is_train=False \
+        --seg_path=${INPUT_F} \
+        --out_path=${OUTPUT_F} \
+        --load_path=${MODEL} \
+        --postprocess_nproc=${POSTPROCESS_NPROC} \
+        --postprocess_seg_thres=${POSTPROCESS_SEG_THRES} \
+        --postprocess_det_thres=${POSTPROCESS_DET_THRES} \
+        --postprocess_win_size=${POSTPROCESS_WIN_SIZE} \
+        --postprocess_min_nucleus_size=${POSTPROCESS_MIN_NUCLEUS_SIZE} \
+        --postprocess_max_nucleus_size=${POSTPROCESS_MAX_NUCLEUS_SIZE} \
+        --method_description=${DESCRIPTION_IN_JSON} \
+        --only_postprocess=False \
+        &> ${LOG_F}/log_wsi_seg.txt
+fi
+
+#cnn segment results folder stored in cluster:
+#nfs002:/data/shared/cnn_prediction/results
+output_location="nfs002:/data/shared/cnn_prediction/results"
+node_name=${output_location%:*}
+ssh ${node_name}
+scp -r ${OUTPUT_F}/* ${output_location}/
+
+# Relocate output
+#ssh nfs001 mkdir -p /data/shared/lehhou/wsi_seg_output/
+#scp -r ${OUTPUT_F}/* nfs001:/data/shared/lehhou/wsi_seg_output/
+
+
+#remove temp folder from computing node
+rm -rf ${LOCAL_DATA_ROOT}
+
+echo "-----------------------------------------------------"
+echo "Date: $(date)"
+echo "-----------------------------------------------------"
