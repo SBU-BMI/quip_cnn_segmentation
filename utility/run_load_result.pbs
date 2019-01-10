@@ -1,0 +1,54 @@
+#!/bin/bash
+
+#LongQ will tell it to run on compute node
+#PBS -q longq
+# set name of job
+#PBS -N segment_result_loading 
+#PBS -e /home/bwang/temp/logs/pbs/
+#PBS -o /home/bwang/temp/logs/pbs/
+# set the number of nodes and processes per node
+#PBS -l nodes=1:ppn=40
+#PBS -l mem=80Gb
+# mail alert at (b)eginning, (e)nd and (a)bortion of execution
+#PBS -m bea
+# send mail to the following address
+#PBS -M tigerfan7495@gmail.com
+
+echo "-----------------------------------------------------"
+echo "Date: $(date)                     Host:$(hostname)"
+echo "-----------------------------------------------------"
+
+# mongo database variables
+db_host="seahawk.uhmc.sunysb.edu"
+db_name="quip"
+
+# define local temp folder in computing node
+my_home="/data1/bwang"
+cnn_folder="cnn_tmp"
+LOCAL_DATA_ROOT=${my_home}/${cnn_folder}/
+[ -d ${LOCAL_DATA_ROOT} ] || mkdir ${LOCAL_DATA_ROOT}
+
+
+# get image file id and path from input arguments
+imageid=$image_id
+resultpath=$result_path
+
+# Prepare input
+scp ${resultpath}/${imageid}/*.json ${LOCAL_DATA_ROOT}/
+scp ${resultpath}/${imageid}/*features.csv ${LOCAL_DATA_ROOT}/
+
+cd $PBS_O_WORKDIR
+
+/home/tkurc/work/pathomics_featuredb/build/install/featuredb-loader/bin/featuredb-loader \
+    --inptype csv \
+    --dbhost ${db_host} \
+    --dbname ${db_name} \
+    --fromdb \
+    --quip ${LOCAL_DATA_ROOT}/
+
+# remove temp folder from computing node
+rm -rf ${LOCAL_DATA_ROOT}
+
+echo "-----------------------------------------------------"
+echo "Date: $(date)"
+echo "-----------------------------------------------------"
