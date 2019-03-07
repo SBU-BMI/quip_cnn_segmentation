@@ -163,7 +163,14 @@ def main(unused_argv):
   # Horovod: pin GPU to be used to process local rank (one GPU per process)
   cfg = tf.ConfigProto()
   cfg.gpu_options.allow_growth = True
-  cfg.gpu_options.visible_device_list = str(hvd.local_rank())
+  
+  #Use this on Summit, where each task sees only one GPU as 0
+  cfg.gpu_options.visible_device_list = "0"
+
+  #Use this on DGX, where tasks can "see" all GPUs on a node
+  #cfg.gpu_options.visible_device_list = str(hvd.local_rank())
+
+  
 
   model_dir="model/cnn_segmentation_model" if hvd.rank() == 0 else None
 
