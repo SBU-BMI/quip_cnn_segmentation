@@ -1,5 +1,6 @@
 #-*- coding: utf-8 -*-
 import argparse
+import os
 
 def str2bool(v):
   return v.lower() in ('true', '1')
@@ -22,20 +23,25 @@ data_arg.add_argument('--input_channel', type=int, default=3)
 #data_arg.add_argument('--train_mask_dir', type=str, default="/data1/jlogan/data/mask")
 #data_arg.add_argument('--eval_data_dir', type=str, default="/data1/jlogan/data/image")
 #data_arg.add_argument('--eval_mask_dir', type=str, default="/data1/jlogan/data/mask")
-data_arg.add_argument('--train_data_dir', type=str, default="../../segmentation-tensorflow/data/nuclei/image")
-data_arg.add_argument('--train_mask_dir', type=str, default="../../segmentation-tensorflow/data/nuclei/mask")
-data_arg.add_argument('--eval_data_dir', type=str, default="../../segmentation-tensorflow/data/nuclei/image")
-data_arg.add_argument('--eval_mask_dir', type=str, default="../../segmentation-tensorflow/data/nuclei/mask")
+data_arg.add_argument('--train_data_dir', type=str, default="%s/image"%os.environ['LOCAL'])
+data_arg.add_argument('--train_mask_dir', type=str, default="%s/mask"%os.environ['LOCAL'])
+data_arg.add_argument('--eval_data_dir', type=str, default="/home/lot/scratch/data/old-data/image")
+data_arg.add_argument('--eval_mask_dir', type=str, default="/home/lot/scratch/data/old-data/mask")
 data_arg.add_argument('--real_image_dir', type=str, default="../../segmentation-tensorflow/data/nuclei/real_75")
 
 # Training
 train_arg = add_argument_group('Training')
 train_arg.add_argument('--batch_size', type=int, default=68, help='')
-train_arg.add_argument('--learner_learning_rate', type=float, default=0.03, help='')
+#train_arg.add_argument('--learner_learning_rate', type=float, default=0.03, help='')
+train_arg.add_argument('--learner_learning_rate', type=float, default=0.003, help='')
 train_arg.add_argument('--optimizer', type=str, default='moment', choices=['adam', 'moment', 'sgd'], help='')
 train_arg.add_argument('--random_seed', type=int, default=123, help='')
+train_arg.add_argument('--num_epochs', type=int, default=500, help='')
+train_arg.add_argument('--image_count', type=int, default=11792, help='')
 train_arg.add_argument('--is_train', type=str2bool, default=True, help='')
 
+misc_arg = add_argument_group('Misc')
+misc_arg.add_argument('--model_dir', type=str, default='/home/lot/scratch/models/original')
 
 
 
@@ -84,7 +90,6 @@ train_arg.add_argument('--pred_scaling', type=float, default=1.0, help='')
 train_arg.add_argument('--pred_gkern_sig', type=float, default=0.5, help='')
 
 # Misc
-misc_arg = add_argument_group('Misc')
 misc_arg.add_argument('--log_step', type=int, default=48, help='')
 misc_arg.add_argument('--log_dir', type=str, default='logs')
 misc_arg.add_argument('--sample_dir', type=str, default='samples')

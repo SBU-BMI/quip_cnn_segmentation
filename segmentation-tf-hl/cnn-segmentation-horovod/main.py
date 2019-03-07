@@ -11,7 +11,7 @@ from tensorflow.contrib.framework import arg_scope
 
 import random
 
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 
 import glob
 import os
@@ -165,7 +165,8 @@ def main(unused_argv):
   cfg.gpu_options.allow_growth = True
   cfg.gpu_options.visible_device_list = str(hvd.local_rank())
 
-  model_dir="model/cnn_segmentation_model" if hvd.rank() == 0 else None
+  #model_dir="model/cnn_segmentation_model" if hvd.rank() == 0 else None
+  model_dir=config.model_dir if hvd.rank() == 0 else None
 
   # Create the Estimator
   segmentation_estimator = tf.estimator.Estimator(
@@ -325,7 +326,8 @@ def main(unused_argv):
   if config.is_train:
     segmentation_estimator.train(
       input_fn=input_fn,
-      steps=100 // hvd.size(), # Use None for unlimited steps
+#      steps=20000 // hvd.size(), # Use None for unlimited steps
+      steps=config.num_epochs * config.image_count // (config.batch_size * hvd.size()), # Use None for unlimited steps
       hooks=[logging_hook, bcast_hook])
     # Evaluate the model and print results
     eval_results = segmentation_estimator.evaluate(input_fn=eval_input_fn)

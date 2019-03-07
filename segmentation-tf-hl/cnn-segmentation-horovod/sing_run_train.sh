@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CONTAINER=/data1/jlogan/tf/tf-hvd.simg
+CONTAINER=~/tf-hvd-bridges.simg
 
 
 #mpirun -np 2 -hostfile hostfile hostname
