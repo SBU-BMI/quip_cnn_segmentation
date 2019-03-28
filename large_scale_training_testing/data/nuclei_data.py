@@ -33,7 +33,6 @@ def maybe_preprocess(config, data_path, sample_path=None):
       for filename in fnmatch.filter(filenames, 'image0_*.png'):
         png_paths.append(os.path.join(root, filename))
 
-    png_paths = png_paths[::2];
     print("[*] Preprocessing real `nuclei` data...")
 
     real_images = []
