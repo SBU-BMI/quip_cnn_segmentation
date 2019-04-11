@@ -19,7 +19,7 @@ net_arg.add_argument('--stride_size', type=eval, default='[]', help='')
 net_arg.add_argument('--channel_dims', type=eval, default='[]', help='')
 net_arg.add_argument('--with_ref', type=str2bool, default=True, help='')
 net_arg.add_argument('--learner_global_texture', type=str2bool, default=True, help='')
-net_arg.add_argument('--with_batch_norm', type=str2bool, default=True, help='')
+net_arg.add_argument('--with_batch_norm', type=str2bool, default=False, help='')
 net_arg.add_argument('--refiner_dense_bias', type=str2bool, default=False, help='')
 
 # Data
