@@ -16,5 +16,5 @@ cv2
 If you want to obtain initial synthetic images with nuclear masks, please read training-data-synthesis/README.md  
 If you want to train your nuclei segmentation model, or use our trained nuclei segmentation model, please read segmentation-of-nuclei/README.md 
 
-This software uses several open source code, expecially:  
+This software uses several open source repositories, especially:  
 https://github.com/carpedm20/simulated-unsupervised-tensorflow
