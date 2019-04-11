@@ -20,10 +20,9 @@ Synthetic patch, masks, reference real patches, and real patch pairs (400x400 pa
 The real and initial synthetic nuclear masks (uint8 png file) for training must have the following binary format:  
 ```
   The first bit indicates if it is a nuclear pixel.  
-  The second bit indicates if it is a nuclear boundary pixel.  
   The third bit indicates if it is a nuclear center pixel. 
 ```
-Therefore pixel values in mask files range from 0 to 7. Check out the dummy data in ./data/nuclei/mask/ as examples. 
+Therefore pixel values in mask files range from 0 to 5. Check out the dummy data in ./data/nuclei/mask/ as examples. 
 
 Once you have training data, just run:  
 CUDA_VISIBLE_DEVICES=2 nohup python -u main.py &> log.train.txt & 
