@@ -3,9 +3,9 @@ from PIL import Image
 from os import listdir
 from os.path import isfile, join
 
-size0 = 140;
-size1 = 140;
-npatch_per_tile = 103;
+size0 = 400;
+size1 = 400;
+npatch_per_tile = 3;
 
 def sample_overlap(x, y, fx, fy, xlen, ylen):
     if fx <= x and x <= fx+xlen and fy <= y and y <= fy+ylen:

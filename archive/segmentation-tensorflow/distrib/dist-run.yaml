@@ -1,0 +1,8 @@
+tasks: [
+  {addr: node002, job: worker, gpu: 0},
+  {addr: node004, job: worker, gpu: 0},
+  {addr: node006, job: worker, gpu: 0},
+  {addr: node009, job: worker, gpu: 0},
+  {addr: node010, job: ps, gpu: 0}
+]
+
