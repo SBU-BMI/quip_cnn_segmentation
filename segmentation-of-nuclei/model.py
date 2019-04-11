@@ -487,7 +487,7 @@ class Model(object):
         rlyer = tf.tile(rlyer, [1, self.input_height, self.input_width, 1]);
         layer = tf.concat([layer, rlyer], 3)
 
-      layer = repeat(layer, 4, resnet_block, num_outputs=64, padding='SAME', normalizer_fn=None, scope="resnet")
+      layer = repeat(layer, 5, resnet_block, num_outputs=32, padding='SAME', normalizer_fn=None, scope="resnet")
       layer = conv2d(layer, 3, 3, 1, padding='SAME', normalizer_fn=None, activation_fn=identity, scope="conv_1");
 
       output = tf.clip_by_value(synthesized+layer,
@@ -516,25 +516,25 @@ class Model(object):
       layer = conv2d(layer, 32, 5, 1, padding='VALID', normalizer_fn=None, scope="conv_0_1", name=name)
       layer = slim.avg_pool2d(layer, 2, 2, scope="pool_0")
 
-      layer = conv2d(layer, 64, 5, 1, padding='VALID', normalizer_fn=None, scope="conv_1_0", name=name)
-      layer = conv2d(layer, 64, 5, 1, padding='VALID', normalizer_fn=None, scope="conv_1_1", name=name)
-      layer = conv2d(layer, 64, 5, 1, padding='VALID', normalizer_fn=None, scope="conv_1_2", name=name)
+      layer = conv2d(layer, 48, 5, 1, padding='VALID', normalizer_fn=None, scope="conv_1_0", name=name)
+      layer = conv2d(layer, 48, 5, 1, padding='VALID', normalizer_fn=None, scope="conv_1_1", name=name)
+      layer = conv2d(layer, 48, 5, 1, padding='VALID', normalizer_fn=None, scope="conv_1_2", name=name)
       layer = slim.avg_pool2d(layer, 3, 2, scope="pool_1")
 
-      layer = conv2d(layer, 128, 5, 1, padding='VALID', normalizer_fn=None, scope="conv_2_0", name=name)
-      layer = conv2d(layer, 128, 5, 1, padding='VALID', normalizer_fn=None, scope="conv_2_1", name=name)
-      layer = conv2d(layer, 128, 5, 1, padding='VALID', normalizer_fn=None, scope="conv_2_2", name=name)
+      layer = conv2d(layer, 64, 5, 1, padding='VALID', normalizer_fn=None, scope="conv_2_0", name=name)
+      layer = conv2d(layer, 64, 5, 1, padding='VALID', normalizer_fn=None, scope="conv_2_1", name=name)
+      layer = conv2d(layer, 64, 5, 1, padding='VALID', normalizer_fn=None, scope="conv_2_2", name=name)
       layer = slim.avg_pool2d(layer, 3, 2, scope="pool_2")
 
-      layer = conv2d(layer, 256, 5, 1, padding='VALID', normalizer_fn=self.bn, scope="conv_3_0", name=name)
-      layer = conv2d(layer, 256, 5, 1, padding='VALID', normalizer_fn=self.bn, scope="conv_3_1", name=name)
-      layer = conv2d(layer, 256, 5, 1, padding='VALID', normalizer_fn=self.bn, scope="conv_3_2", name=name)
+      layer = conv2d(layer, 80, 5, 1, padding='VALID', normalizer_fn=self.bn, scope="conv_3_0", name=name)
+      layer = conv2d(layer, 80, 5, 1, padding='VALID', normalizer_fn=self.bn, scope="conv_3_1", name=name)
+      layer = conv2d(layer, 80, 5, 1, padding='VALID', normalizer_fn=self.bn, scope="conv_3_2", name=name)
       layer = slim.avg_pool2d(layer, 3, 2, scope="pool_3")
 
-      layer = conv2d(layer, 512, 5, 1, padding='VALID', normalizer_fn=self.bn, scope="conv_4_0", name=name)
-      layer = conv2d(layer, 512, 3, 1, padding='VALID', normalizer_fn=self.bn, scope="conv_4_1", name=name)
-      layer = conv2d(layer, 512, 3, 1, padding='VALID', normalizer_fn=self.bn, scope="conv_4_2", name=name)
-      logits = conv2d(layer,  2, 1, 1, padding='VALID', normalizer_fn=None, activation_fn=identity, scope="conv_5", name=name)
+      layer = conv2d(layer,128, 5, 1, padding='VALID', normalizer_fn=self.bn, scope="conv_4_0", name=name)
+      layer = conv2d(layer,128, 3, 1, padding='VALID', normalizer_fn=self.bn, scope="conv_4_1", name=name)
+      layer = conv2d(layer,128, 3, 1, padding='VALID', normalizer_fn=self.bn, scope="conv_4_2", name=name)
+      logits = conv2d(layer, 2, 1, 1, padding='VALID', normalizer_fn=None, activation_fn=identity, scope="conv_5", name=name)
       output = tf.nn.softmax(logits, name="softmax")
       self.discrim_vars = tf.contrib.framework.get_variables(sc)
     return output, logits
@@ -610,4 +610,3 @@ class Model(object):
       output = tf.sigmoid(logits, name="sigmoid")
       self.learner_vars = tf.contrib.framework.get_variables(sc)
     return output, logits
-
