@@ -29,47 +29,43 @@ def _update_dict(layer_dict, scope, layer):
 
 def image_from_paths(fake_image_path, config, is_grayscale=False):
   fake_image_path_list = list(fake_image_path);
-  fake_ground_truth_paths = synthetic_to_ground_truth_paths(fake_image_path_list, config);
-  refer_image_path = synthetic_to_refer_paths(fake_image_path_list, config);
+  fake_ground_truth_list = synthetic_to_ground_truth_paths(fake_image_path_list, config);
+  refer_image_list = synthetic_to_refer_paths(fake_image_path_list, config);
 
-  filename_queue = tf.train.string_input_producer(fake_image_path_list, shuffle=False)
-  mask_queue = tf.train.string_input_producer(fake_ground_truth_paths, shuffle=False)
-  filename_refer_queue = tf.train.string_input_producer(refer_image_path, shuffle=False)
+  filename_queue, mask_queue, filename_refer_queue = \
+          tf.train.slice_input_producer([tf.convert_to_tensor(fake_image_path_list),
+                    tf.convert_to_tensor(fake_ground_truth_list), tf.convert_to_tensor(refer_image_list)])
 
-  reader = tf.WholeFileReader()
-
-  image_filename, image_data = reader.read(filename_queue)
-  refer_filename, refer_data = reader.read(filename_refer_queue)
-  mask_filename, mask_data = reader.read(mask_queue)
+  image_data = tf.read_file(filename_queue)
+  mask_data = tf.read_file(mask_queue)
+  refer_data = tf.read_file(filename_refer_queue)
 
   image = tf.image.decode_png(image_data, channels=3, dtype=tf.uint8)
-  refer = tf.image.decode_png(refer_data, channels=3, dtype=tf.uint8)
   mask = tf.image.decode_png(mask_data, channels=1, dtype=tf.uint8)
+  refer = tf.image.decode_png(refer_data, channels=3, dtype=tf.uint8)
 
   if is_grayscale:
     image = tf.image.rgb_to_grayscale(image)
     refer = tf.image.rgb_to_grayscale(refer)
 
-  return image_filename, tf.to_float(image), tf.to_float(refer), tf.to_float(mask)
+  return filename_queue, tf.to_float(image), tf.to_float(refer), tf.to_float(mask)
 
 def supervised_from_paths(supervised_image_path, config, is_grayscale=False):
   supervised_image_path_list = list(supervised_image_path);
-  supervised_ground_truth_paths = supervised_to_ground_truth_paths(supervised_image_path_list, config);
+  supervised_ground_truth_list = supervised_to_ground_truth_paths(supervised_image_path_list, config);
 
-  filename_queue = tf.train.string_input_producer(supervised_image_path_list, shuffle=False)
-  mask_queue = tf.train.string_input_producer(supervised_ground_truth_paths, shuffle=False)
+  filename_queue, mask_queue = \
+          tf.train.slice_input_producer([tf.convert_to_tensor(supervised_image_path_list),
+                    tf.convert_to_tensor(supervised_ground_truth_list)])
 
-  reader = tf.WholeFileReader()
-
-  _, image_data = reader.read(filename_queue)
-  _, mask_data = reader.read(mask_queue)
+  image_data = tf.read_file(filename_queue)
+  mask_data = tf.read_file(mask_queue)
 
   image = tf.image.decode_png(image_data, channels=3, dtype=tf.uint8)
   mask = tf.image.decode_png(mask_data, channels=1, dtype=tf.uint8)
 
   if is_grayscale:
     image = tf.image.rgb_to_grayscale(image)
-    refer = tf.image.rgb_to_grayscale(refer)
 
   return tf.to_float(image), tf.to_float(mask)
 
