@@ -294,7 +294,7 @@ class Model(object):
       ])
 
     with tf.name_scope("refiner"):
-      self.realism_loss = self.real_scale * 5.0 * log_loss(
+      self.realism_loss = self.real_scale * log_loss(
           self.D_R_x_logits, real_label(self.D_R_x_logits), "realism_loss")
       self.reg_loss_l1 = self.reg_scale_l1 * tf.reduce_sum(
               tf.abs(self.R_x - self.normalized_x), [1, 2, 3], name="regularization_loss_l1");
