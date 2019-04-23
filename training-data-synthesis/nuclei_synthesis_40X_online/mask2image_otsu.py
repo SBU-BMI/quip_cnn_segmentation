@@ -135,14 +135,6 @@ class Mask2Image:
         cyto_tile = cv2.inpaint(full_tile[x:x+size0, y:y+size1, :], \
                 to_map_mask.astype(np.uint8)[x:x+size0, y:y+size1], 3, cv2.INPAINT_TELEA);
 
-        ####################
-        # DEBUG
-        #misc.imsave('real_patch.png', full_tile[x:x+size0, y:y+size1, :]);
-        #misc.imsave('inpaint_mask.png', 255*to_map_mask.astype(np.uint8)[x:x+size0, y:y+size1]);
-        #misc.imsave('inpainted.png', cyto_tile);
-        # DEBUG
-        ####################
-
         source_tl = full_tile[x:x+size0, y:y+size1, :].copy();
         full_tile = full_tile[fx:fx+size0, fy:fy+size1, :];
         return True, dense_lvl, full_tile, cyto_tile, source_tl, nucl_color, noise_color, nuc_texture, full_tile_path;
@@ -283,22 +275,10 @@ class Mask2Image:
         full_tile, cyto_tile, source_tl, nucl_color, noise2_color, nuc_texture1, nuc_texture2 = textures;
 
         cyto = self.add_h_color(self.aug_color(cyto_tile, mag=0.10));
-        ########################
-        # DEBUG
-        #cyto = self.aug_color(cyto_tile, mag=0.0);
-        # DEBUG
-        ########################
 
         nucl = self.get_nucl_color_map(nuc_texture1, nucl_color);
         nucl = self.aug_color(nucl, mag=0.10);
         intp_nucl_mask = self.mask_to_mixing_mask(mask, nuc_texture2.copy(), average_nucl_size, more_blur=False);
-        ########################
-        # DEBUG
-        #nucl = self.aug_color(nucl, mag=0.0);
-        #misc.imsave('nuclei_material.png', np.clip(nucl, 0.1, 249.0).astype(np.uint8));
-        #misc.imsave('intp_nucl_mask.png', (intp_nucl_mask*255).astype(np.uint8));
-        # DEBUG
-        ########################
 
         ########################
         # Adding noise type2
