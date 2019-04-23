@@ -7,11 +7,19 @@ from mask2image_otsu import Mask2Image
 from scipy import ndimage
 from sys import stdout
 
+# Synthesize patches of 460x460 pixels first,
+# then cut the surrounding 30 pixels off to get patches of 400x400 pixels.
 size = 460;
-quad_marg = 310;
 cm = 30;
+
+# Apply a QUAD transform with quad_marg.
+# This transform models the correlation of shape and size of nearby nuclei.
+quad_marg = 310;
+
+# Initialize the Mask2Image object, using textures in real tiles.
 m2image = Mask2Image('./nuclei_synthesis_40X_online/real_tiles/');
 
+# This function returns a set of parameters for nuclear polygon generation.
 def get_rand_polygon_param(s):
     x, y = int(np.random.rand()*s), int(np.random.rand()*s);
     rad = np.random.rand()*4.5 + 8.5;
@@ -20,6 +28,7 @@ def get_rand_polygon_param(s):
     nverti = int(np.random.rand()*8+10);
     return x, y, rad, irr, spike, nverti;
 
+# This function returns a set of parameters for noise polygon generation.
 def get_rand_noise(s):
     x, y = int(np.random.rand()*s), int(np.random.rand()*s);
     rad = np.random.rand()*5.0+6.0;
@@ -28,6 +37,7 @@ def get_rand_noise(s):
     nverti = 40;
     return x, y, rad, irr, spike, nverti;
 
+# Draw polygon mask according to polygon parameters
 def draw_polygon(x, y, rad, irr, spike, nverti, s):
     vertices = generatePolygon(x, y, rad, irr, spike, nverti);
     mask = Image.fromarray(np.zeros((s, s, 3), dtype=np.uint8));
@@ -35,6 +45,7 @@ def draw_polygon(x, y, rad, irr, spike, nverti, s):
     draw.polygon(vertices, fill=(1,1,1));
     return np.array(mask);
 
+# Apply a random QUAD transformation.
 def random_transform(mask, s, q):
     return np.array(Image.fromarray(mask).transform((s, s), Image.QUAD, q, Image.NEAREST));
 
