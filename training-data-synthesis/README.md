@@ -7,7 +7,9 @@ This code requires a database of relatively large (> 1000x1000 pixels in 40X) re
 
 ## Synthesize fake training images with masks
 Generate synthetic images with nuclear masks:  
-bash draw_fake_main.sh
+bash draw_fake_main.sh  
+
+A pixel value in the nuclear mask can 
 
 ## Extract real images with no mask
 Extract real images with no masks:  
