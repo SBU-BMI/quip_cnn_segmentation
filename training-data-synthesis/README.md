@@ -7,7 +7,7 @@ This code requires a database of relatively large (> 1000x1000 pixels in 40X) re
 
 ## Synthesize fake training images with masks
 Generate synthetic images with nuclear masks:  
-bash draw_fake_main.sh  
+bash draw_fake.sh  
 
 The synthetic nuclear masks (uint8 png file) have the following binary format:  
 ```
@@ -19,5 +19,5 @@ In other words, a pixel value in nuclear masks ranges from 0 to 7.
 
 ## Extract real images with no mask
 Extract real images with no masks:  
-nohup bash draw_real_main.sh &
+python draw_real.py
 
