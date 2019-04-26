@@ -15,6 +15,7 @@ The first bit indicates if it is a nuclear pixel.
 The second bit indicates if it is a nuclear boundary pixel.  
 The third bit indicates if it is a nuclear center pixel. 
 ```
+In other words, a pixel value in nuclear masks ranges from 0 to 7.  
 
 ## Extract real images with no mask
 Extract real images with no masks:  
