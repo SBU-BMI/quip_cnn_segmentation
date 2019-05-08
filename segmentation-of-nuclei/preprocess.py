@@ -56,7 +56,7 @@ def stain_normalized_tiling(slide_name, patch_size, do_actually_read_image=True)
             else:
                 pw_y = pw
 
-            if pw_x <= 0 or pw_y <= 0:
+            if pw_x <= 3 or pw_y <= 3:
                 continue
 
             if do_actually_read_image:
