@@ -1,7 +1,10 @@
 #!/bin/bash
+# Start 5 processes
 
-LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HOME}/my_libc_env/lib/x86_64-linux-gnu/:${HOME}/my_libc_env/usr/lib64/" \
-${HOME}/my_libc_env/lib/x86_64-linux-gnu/ld-2.17.so \
-~/anaconda2/bin/python draw_fake.py ${1} ${2}
+nohup python draw_fake.py 0 5 &
+nohup python draw_fake.py 1 5 &
+nohup python draw_fake.py 2 5 &
+nohup python draw_fake.py 3 5 &
+nohup python draw_fake.py 4 5 &
 
 exit 0

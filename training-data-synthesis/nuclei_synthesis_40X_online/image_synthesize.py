@@ -7,11 +7,19 @@ from mask2image_otsu import Mask2Image
 from scipy import ndimage
 from sys import stdout
 
+# Synthesize patches of 460x460 pixels first,
+# then cut the surrounding 30 pixels off to get patches of 400x400 pixels.
 size = 460;
-quad_marg = 310;
 cm = 30;
+
+# Apply a QUAD transform with quad_marg.
+# This transform models the correlation of shape and size of nearby nuclei.
+quad_marg = 310;
+
+# Initialize the Mask2Image object, using textures in real tiles.
 m2image = Mask2Image('./nuclei_synthesis_40X_online/real_tiles/');
 
+# This function returns a set of parameters for nuclear polygon generation.
 def get_rand_polygon_param(s):
     x, y = int(np.random.rand()*s), int(np.random.rand()*s);
     rad = np.random.rand()*4.5 + 8.5;
@@ -20,6 +28,7 @@ def get_rand_polygon_param(s):
     nverti = int(np.random.rand()*8+10);
     return x, y, rad, irr, spike, nverti;
 
+# This function returns a set of parameters for noise polygon generation.
 def get_rand_noise(s):
     x, y = int(np.random.rand()*s), int(np.random.rand()*s);
     rad = np.random.rand()*5.0+6.0;
@@ -28,6 +37,7 @@ def get_rand_noise(s):
     nverti = 40;
     return x, y, rad, irr, spike, nverti;
 
+# Draw polygon mask according to polygon parameters
 def draw_polygon(x, y, rad, irr, spike, nverti, s):
     vertices = generatePolygon(x, y, rad, irr, spike, nverti);
     mask = Image.fromarray(np.zeros((s, s, 3), dtype=np.uint8));
@@ -35,9 +45,12 @@ def draw_polygon(x, y, rad, irr, spike, nverti, s):
     draw.polygon(vertices, fill=(1,1,1));
     return np.array(mask);
 
+# Apply a random QUAD transformation.
+# This transform models the correlation of shape and size of nearby nuclei.
 def random_transform(mask, s, q):
     return np.array(Image.fromarray(mask).transform((s, s), Image.QUAD, q, Image.NEAREST));
 
+# Generate a random QUAD transformation.
 def rand_quad_trans():
     q = (np.random.rand()*quad_marg,
             np.random.rand()*quad_marg,
@@ -49,6 +62,7 @@ def rand_quad_trans():
             np.random.rand()*quad_marg);
     return q;
 
+# Generate a new nucleus with mask, centroid (detect), and contour
 def rand_nucleus(nsize, qm, q, nsize_bias, cyto_mask):
     mask = np.array([-1]);
     ntry = 0;
@@ -67,6 +81,7 @@ def rand_nucleus(nsize, qm, q, nsize_bias, cyto_mask):
 
     return mask, detect, contour;
 
+# Generate a clutered noise mask
 def get_noise_mask(nsize, qm, star_noise):
     mask = np.array([-1]);
     ntry = 0;
@@ -81,10 +96,14 @@ def get_noise_mask(nsize, qm, star_noise):
         ntry += 1;
     return mask;
 
+# The main API of this file.
+# Return a fake image patch with nuclear mask and related info.
 def get_new_fake_image():
+    # First, get some information of real texture
     dense_lvl, textures, full_tile_path = m2image.draw_random_texture(size, size);
     cyto_mask = m2image.get_cyto_mask(textures[1])
 
+    # Generate the number of nuclei, according to the information of real texture.
     if np.random.rand() < 0.10 and dense_lvl <= 1:
         nuclei_num = 0;
     else:
@@ -94,11 +113,14 @@ def get_new_fake_image():
     if nuclei_num > 256:
         nuclei_num = 256;
     nuclei_num = int(nuclei_num);
+    # Random number of noise type 1
     noise_num = np.random.randint(low=0, high=100);
+    # Random number of noise type 2
     noise2_num = np.random.randint(low=0, high=5);
+    # Size bias of all nuclei
     nsize_bias = np.random.randn()*0.32 + dense_lvl/8.0 + 1.2;
 
-    # mask is accumulative mask
+    # mask, centroid (detect), and contour are accumulative
     mask = np.zeros((size, size, 3), dtype=np.uint32);
     detect = np.zeros((size, size, 3), dtype=np.uint32);
     contour = np.zeros((size, size, 3), dtype=np.uint32);
@@ -129,17 +151,12 @@ def get_new_fake_image():
     for noise2_no in range(noise2_num):
         noise2_mask += get_noise_mask(size, quad_marg, star_noise=False);
 
-    # convert mask to image and save the image
+    # Convert mask to image and save the image
+    # This is achieved by painting textures inside and outside the mask
     image, refer, source, nucl, cyto, intp_nucl_mask = \
             m2image.go((mask>0).astype(np.uint8),
                     (noise_mask>0).astype(np.uint8), (noise2_mask>0).astype(np.uint8),
                     textures, average_size);
-    #if np.random.rand() < 0.5:
-    #    refer = np.transpose(refer, (1, 0, 2));
-    #if np.random.rand() < 0.5:
-    #    refer = refer[::-1, :, :];
-    #if np.random.rand() < 0.5:
-    #    refer = refer[:, ::-1, :];
 
     return image[cm:-cm, cm:-cm, :], mask[cm:-cm, cm:-cm, :], detect[cm:-cm, cm:-cm, :], \
            contour[cm:-cm, cm:-cm, :], refer[cm:-cm, cm:-cm, :], \

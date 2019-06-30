@@ -2,15 +2,22 @@
 
 This code generates synthetic images with nuclei masks, and real images without masks.  
 
-This code requires a database of relatively large real image tiles under:  
+This code requires a database of relatively large (> 1000x1000 pixels in 40X) real image tiles under:  
 ./nuclei_synthesis_40X_online/real_tiles/  
 
-On eagle, this is one under:  
-/data08/shared/lehhou/nuclei_synthesis_40X_api_400x400/nuclei_synthesis_40X_online/real_tiles  
-
 ## Synthesize fake training images with masks
-bash draw_fake_main.sh
+Generate synthetic images with nuclear masks:  
+bash draw_fake.sh  
+
+The synthetic nuclear masks (uint8 png file) have the following binary format:  
+```
+The first bit indicates if it is a nuclear pixel.  
+The second bit indicates if it is a nuclear boundary pixel.  
+The third bit indicates if it is a nuclear center pixel. 
+```
+In other words, a pixel value in nuclear masks ranges from 0 to 7.  
 
 ## Extract real images with no mask
-nohup bash draw_real_main.sh &
+Extract real images with no masks:  
+python draw_real.py
 
