@@ -3,11 +3,22 @@
 ################################
 # GPU used for the CNN. If you have 4 GPUs, GPU_ID could be 0, 1, 2, or 3
 # Check your GPU availability using nvidia-smi
-GPU_ID=0
+if [[ -z "${CUDA_VISIBLE_DEVICES}" ]]; then
+	GPU_ID=0
+else
+	GPU_ID=${CUDA_VISIBLE_DEVICES}
+fi
+
 # Do not change this. It will be looking for ./logs/model_trained/
 MODEL=model_trained
+
 # Number of processes for postprocessing (watershed, generating json, csv files etc.)
-POSTPROCESS_NPROC=12
+if [[ -z "${NPROCS}" ]]; then
+	POSTPROCESS_NPROC=12
+else
+	POSTPROCESS_NPROC=${NPROCS}
+fi
+
 # Segmentation threshold (0.0 ~ 1.0). A lower value results in more segmented nuclear material
 POSTPROCESS_SEG_THRES=0.33
 # Detection threshold (0.0 ~ 1.0). A lower value results in more segmented nuclei
@@ -28,7 +39,7 @@ DO_CPU_POSTPROCESS=True
 
 # The root of all of your data
 # WSIs, log files, and outputs will be stored under this folder
-LOCAL_DATA_ROOT=/data1/wsi_seg_local_data
+LOCAL_DATA_ROOT=/data/wsi_seg_local_data
 
 INPUT_F=${LOCAL_DATA_ROOT}/svs/
 OUTPUT_F=${LOCAL_DATA_ROOT}/seg_tiles/

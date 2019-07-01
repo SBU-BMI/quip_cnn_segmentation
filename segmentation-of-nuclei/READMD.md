@@ -1,6 +1,27 @@
-# Large scale training and testing code
+# docker container for training and prediction 
 
-## Training
+## Prediction (Segmentation)
+
+Run the container as:
+
+nvidia-docker run --name quip-segmentation -itd -v /<host-data-folder>:/data/wsi_seg_local_data \ 
+	-e CUDA_VISIBLE_DEVICES=<GPU id> -e NPROCS=<# CPU cores for watershed processing> \
+	quip_cnn_segmentation run_wsi_seg.sh
+
+<host-folder> should have a "svs" subfolder. Input images should be in the svs subfolder. 
+
+-v /<host-data-folder>:/data/wsi_seg_local_data will map the <host-folder> on the host to the 
+local folder in the container. The segmentation run will create two output folders: 
+
+```
+/<host-data-folder>/logs (/data/wsi_seg_local_data/logs): log files are stored in this folder.
+/<host-data-folder>/seg_tiles (/data/wsi_seg_local_data/seg_tiles): segmentation output is stored 
+in this folder
+```
+
+The docker container does everything: tiling, detection and segmentation, csv and json file generation.
+
+## Training (NOT DONE YET)
 Training input (I put some dummy data in): 
 
 Real patch and masks (400x400 patches):  
@@ -27,23 +48,3 @@ Therefore pixel values in mask files range from 0 to 5. Check out the dummy data
 Once you have training data, just run:  
 CUDA_VISIBLE_DEVICES=2 nohup python -u main.py &> log.train.txt & 
 
-## Testing
-You need to have a trained model. You can use your trained model under ./logs/, or you can download our trained model:  
-wget http://vision.cs.stonybrook.edu/~lehhou/download/model_trained.tar.gz  
-Note that the model_trained folder should be under ./logs/, not the content. In other words, the directory should look like:  
-ls ./logs/model_trained/  
-checkpoint  graph.pbtxt  model.ckpt-184780.data-00000-of-00001  model.ckpt-184780.index  model.ckpt-184780.meta  params.json 
-
-Then, just config run_wsi_seg.sh and run:  
-nohup bash run_wsi_seg.sh & 
-
-Note: you need to understand run_wsi_seg.sh before running it.  
-By default, it assumes that all data is stored under:  
-```
-/data1/wsi_seg_local_data/svs/: the folder holds input WSIs (.svs or .tif)  
-/data1/wsi_seg_local_data/logs/: the folder holds logs files  
-/data1/wsi_seg_local_data/seg_tiles/: the folder holds segmentation outputs 
-```
-
-The python program does everything: tiling, detection and segmentation, csv and json file generation.
-You can use visual_seg_polygons.py to visualize polygons overlayed with segmentation results.  
