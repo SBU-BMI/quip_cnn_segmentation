@@ -28,6 +28,8 @@ def stain_normalized_tiling(slide_name, patch_size, do_actually_read_image=True)
             mpp = float(oslide.properties["XResolution"]);
         elif "tiff.XResolution" in oslide.properties:
             mpp = float(oslide.properties["tiff.XResolution"]);
+            if mpp > 2.0:
+               mpp = 10000.0/mpp;
         else:
             mpp = 0.250
 

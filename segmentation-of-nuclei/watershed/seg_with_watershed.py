@@ -6,6 +6,7 @@ from PIL import Image
 from scipy import ndimage
 from skimage.morphology import watershed
 from skimage.color import label2rgb
+import time
 
 import detection_binarize
 from gen_json import gen_meta_json
@@ -49,6 +50,8 @@ def apply_segmentation(in_path, image_id, wsi_width, wsi_height, method_descript
 
     global_xy_offset = [int(x) for x in file_id.split('_')[0:2]]
 
+    time0 = time.time();
+
     # Padding and smoothing
     padding_size = win_size + 10
     detection = zero_padding(detection_binarize.detection_peaks(detection, det_thres), padding_size)
@@ -58,8 +61,12 @@ def apply_segmentation(in_path, image_id, wsi_width, wsi_height, method_descript
     seeds = seed_recall(detection>0, segmentation>(seg_thres*255), segmentation)
 
     markers = ndimage.measurements.label(ndimage.morphology.binary_dilation(seeds, np.ones((3,3))))[0]
+
+    time1 = time.time();
     water_segmentation = watershed(-segmentation, markers,
             mask=(segmentation>(seg_thres*255)), compactness=1.0)
+
+    time2 = time.time();
 
     xs, ys = np.where(seeds)
     fid = open(os.path.join(os.path.dirname(in_path), file_id+'-features.csv'), 'w')
@@ -84,6 +91,10 @@ def apply_segmentation(in_path, image_id, wsi_width, wsi_height, method_descript
         fid.write('{},{},[{}]\n'.format(
             int(physical_size/resize_factor/resize_factor), int(physical_size), poly_str))
     fid.close()
+
+    time3 = time.time();
+
+    print "Time in watershed for ",in_path," Padding/Seed: ",(time1-time0)," Watershed: ",(time2-time1)," Fillholes: ",(time3-time2)
 
     gen_meta_json(in_path, image_id, wsi_width, wsi_height, method_description,
             seg_thres, det_thres, win_size, min_nucleus_size, max_nucleus_size)
