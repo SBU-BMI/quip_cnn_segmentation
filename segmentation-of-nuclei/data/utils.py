@@ -30,11 +30,11 @@ def prepare_dirs(config):
   else:
     config.model_name = "{}_{}".format(prefix, get_time())
 
-  config.model_dir = os.path.join(config.log_dir, config.model_name)
+  config.model_dir = os.path.join(config.trained_model_dir, config.model_name)
   config.sample_model_dir = os.path.join(config.sample_dir, config.model_name)
   config.output_model_dir = os.path.join(config.output_dir, config.model_name)
 
-  for path in [config.log_dir, config.data_dir,
+  for path in [config.data_dir,
                config.sample_dir, config.sample_model_dir,
                config.output_dir, config.output_model_dir]:
     if not os.path.exists(path):
