@@ -19,6 +19,7 @@ class Buffer(object):
         1,
     ]
 
+    self.patch_dump = False
     self.patch_dump_id = 0
     self.idx = 0
     self.data = np.zeros([self.buffer_size,] + image_dims, dtype=np.float32)
@@ -31,11 +32,13 @@ class Buffer(object):
     ref_image = both_batches[2]
 
     batch_size = len(batch)
-#    for b in range(batch_size):
-#        misc.imsave('data/refined_output/image/{}.png'.format(self.patch_dump_id), batch[b])
-#        misc.imsave('data/refined_output/mask/{}.png'.format(self.patch_dump_id), np.squeeze(mask[b].astype(np.uint8)))
-#        misc.imsave('data/refined_output/refer/{}.png'.format(self.patch_dump_id), ref_image[b])
-#        self.patch_dump_id += 1
+
+    if self.patch_dump:
+        for b in range(batch_size):
+            misc.imsave('data/refined_output/image/{}.png'.format(self.patch_dump_id), batch[b])
+            misc.imsave('data/refined_output/mask/{}.png'.format(self.patch_dump_id), np.squeeze(mask[b].astype(np.uint8)))
+            misc.imsave('data/refined_output/refer/{}.png'.format(self.patch_dump_id), ref_image[b])
+            self.patch_dump_id += 1
 
     if self.idx + batch_size > self.buffer_size:
       random_idx1 = self.rng.choice(self.idx, self.batch_size/2)
