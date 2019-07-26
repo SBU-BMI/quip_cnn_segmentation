@@ -34,11 +34,11 @@ class Buffer(object):
     batch_size = len(batch)
 
     if self.patch_dump:
-        for b in range(batch_size):
-            misc.imsave('data/refined_output/image/{}.png'.format(self.patch_dump_id), batch[b])
-            misc.imsave('data/refined_output/mask/{}.png'.format(self.patch_dump_id), np.squeeze(mask[b].astype(np.uint8)))
-            misc.imsave('data/refined_output/refer/{}.png'.format(self.patch_dump_id), ref_image[b])
-            self.patch_dump_id += 1
+      for b in range(batch_size):
+        misc.imsave('data/refined_output/image/{}.png'.format(self.patch_dump_id), batch[b])
+        misc.imsave('data/refined_output/mask/{}.png'.format(self.patch_dump_id), np.squeeze(mask[b].astype(np.uint8)))
+        misc.imsave('data/refined_output/refer/{}.png'.format(self.patch_dump_id), ref_image[b])
+        self.patch_dump_id += 1
 
     if self.idx + batch_size > self.buffer_size:
       random_idx1 = self.rng.choice(self.idx, self.batch_size/2)
