@@ -21,7 +21,7 @@ in this folder
 
 The docker container does everything: tiling, detection and segmentation, csv and json file generation.
 
-## Training (NOT DONE YET)
+## Training
 Training input (I put some dummy data in): 
 
 Real patch and masks (400x400 patches):  
