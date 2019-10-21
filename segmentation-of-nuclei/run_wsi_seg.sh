@@ -9,7 +9,7 @@ else
 	GPU_ID=${CUDA_VISIBLE_DEVICES}
 fi
 
-# Do not change this. It will be looking for ./logs/model_trained/
+# Do not change this. It will be looking for ./cnn_model/model_trained/
 MODEL=model_trained
 
 # Number of processes for postprocessing (watershed, generating json, csv files etc.)
