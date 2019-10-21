@@ -4,9 +4,9 @@
 # GPU used for the CNN. If you have 4 GPUs, GPU_ID could be 0, 1, 2, or 3
 # Check your GPU availability using nvidia-smi
 if [[ -z "${CUDA_VISIBLE_DEVICES}" ]]; then
-	GPU_ID=0
+    GPU_ID=0
 else
-	GPU_ID=${CUDA_VISIBLE_DEVICES}
+    GPU_ID=${CUDA_VISIBLE_DEVICES}
 fi
 
 # Do not change this. It will be looking for ./cnn_model/model_trained/
@@ -14,9 +14,9 @@ MODEL=model_trained
 
 # Number of processes for postprocessing (watershed, generating json, csv files etc.)
 if [[ -z "${NPROCS}" ]]; then
-	POSTPROCESS_NPROC=12
+    POSTPROCESS_NPROC=12
 else
-	POSTPROCESS_NPROC=${NPROCS}
+    POSTPROCESS_NPROC=${NPROCS}
 fi
 
 # Segmentation threshold (0.0 ~ 1.0). A lower value results in more segmented nuclear material
@@ -29,7 +29,7 @@ POSTPROCESS_WIN_SIZE=200
 POSTPROCESS_MIN_NUCLEUS_SIZE=20
 # Maximum size of a nucleus. A segmented object bigger than this will be consider as noise and discarded
 POSTPROCESS_MAX_NUCLEUS_SIZE=65536
-# Description burn into the json meta faile
+# Description burn into the json meta file
 DESCRIPTION_IN_JSON=seg
 
 # If you already have all segmentation results (*_SEG.png), you might want to do postprocessing only
