@@ -98,4 +98,3 @@ def apply_segmentation(in_path, image_id, wsi_width, wsi_height, method_descript
 
     gen_meta_json(in_path, image_id, wsi_width, wsi_height, method_description,
             seg_thres, det_thres, win_size, min_nucleus_size, max_nucleus_size)
-
