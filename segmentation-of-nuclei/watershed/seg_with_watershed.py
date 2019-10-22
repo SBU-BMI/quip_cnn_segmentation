@@ -23,14 +23,42 @@ def apply_segmentation(in_path, image_id, wsi_width, wsi_height, method_descript
     def remove_padding(array, margin):
         return array[margin:-margin, margin:-margin]
 
+    def get_bound_boxes(labeled_region, n_region):
+        bbox_arr = [None,] * (n_region + 1)
+        if n_region == 0:
+            return bbox_arr
+
+        it = np.nditer(labeled_region, flags=['multi_index'])
+        while not it.finished:
+            v = it[0]
+            if v < 1:
+                it.iternext()
+                continue
+            x, y = it.multi_index
+            if bbox_arr[v] is None:
+                bbox_arr[v] = (x, x, y, y)
+            else:
+                minx, maxx, miny, maxy = bbox_arr[v]
+                bbox_arr[v] = (min(x, minx), max(x, maxx),
+                               min(y, miny), max(y, maxy))
+            it.iternext()
+        return bbox_arr
+
     def seed_recall(seeds, seg_region, potential):
         labeled_region, n_region = ndimage.measurements.label(seg_region)
+        bbox_arr = get_bound_boxes(labeled_region, n_region)
+
         for regi in range(1, n_region+1):
-            bin_region = (labeled_region == regi)
-            if (seeds * bin_region).sum() == 0 and bin_region.sum() < max_nucleus_size:
-                region_potential = potential*bin_region
-                maxx, maxy = np.unravel_index(np.argmax(region_potential, axis=None), region_potential.shape)
-                seeds[maxx, maxy] = True
+            minx, maxx, miny, maxy = bbox_arr[regi]
+            bin_region = (labeled_region[minx:maxx+1, miny:maxy+1] == regi)
+            seed_region = seeds[minx:maxx+1, miny:maxy+1]
+            potential_region = potential[minx:maxx+1, miny:maxy+1]
+
+            if (seed_region * bin_region).sum() == 0 and bin_region.sum() < max_nucleus_size:
+                potential_local = potential_region * bin_region
+                x_offset, y_offset = np.unravel_index(
+                        np.argmax(potential_local, axis=None), potential_local.shape)
+                seeds[minx+x_offset, miny+y_offset] = True
         return seeds
 
     def read_instance(im_file, resize_factor):
@@ -50,7 +78,7 @@ def apply_segmentation(in_path, image_id, wsi_width, wsi_height, method_descript
 
     global_xy_offset = [int(x) for x in file_id.split('_')[0:2]]
 
-    time0 = time.time();
+    time0 = time.time()
 
     # Padding and smoothing
     padding_size = win_size + 10
@@ -62,11 +90,11 @@ def apply_segmentation(in_path, image_id, wsi_width, wsi_height, method_descript
 
     markers = ndimage.measurements.label(ndimage.morphology.binary_dilation(seeds, np.ones((3,3))))[0]
 
-    time1 = time.time();
+    time1 = time.time()
     water_segmentation = watershed(-segmentation, markers,
             mask=(segmentation>(seg_thres*255)), compactness=1.0)
 
-    time2 = time.time();
+    time2 = time.time()
 
     xs, ys = np.where(seeds)
     fid = open(os.path.join(os.path.dirname(in_path), file_id+'-features.csv'), 'w')
@@ -92,7 +120,7 @@ def apply_segmentation(in_path, image_id, wsi_width, wsi_height, method_descript
             int(physical_size/resize_factor/resize_factor), int(physical_size), poly_str))
     fid.close()
 
-    time3 = time.time();
+    time3 = time.time()
 
     print "Time in watershed for ",in_path," Padding/Seed: ",(time1-time0)," Watershed: ",(time2-time1)," Fillholes: ",(time3-time2)
 
