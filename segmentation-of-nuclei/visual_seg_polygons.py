@@ -18,7 +18,6 @@ draw = ImageDraw.Draw(im)
 
 with open(poly_path, mode='r') as csv_file:
     csv_reader = csv.DictReader(csv_file)
-    line_count = 0
     for row in csv_reader:
         coors = [float(n) for n in row["Polygon"][1:-1].split(':')]
         for i in range(0, len(coors), 2):
