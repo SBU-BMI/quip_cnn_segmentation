@@ -301,7 +301,7 @@ class Trainer(object):
               xy_indices = [];
 
         pred_m /= num_m;
-        pred_m = misc.imresize((pred_m*255).astype(np.uint8), (ori_size0, ori_size1));
+        pred_m = misc.imresize((pred_m*255).astype(np.uint8), (ori_size1, ori_size0));
         imwrite(outf, pred_m);
         #he_outf = os.path.join(outfolder, '{}_{}_{}_{}_{}_{}_HE.png'.format(
         #                                  px, py, pw_x, pw_y, mpp, scale_factor))
