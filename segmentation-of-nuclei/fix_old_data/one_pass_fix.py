@@ -3,6 +3,12 @@ have a bug: segmentation results (if there are any) close to the
 boundary of a WSI are mis-aligned with the actual image.
 
 Please use this script to fix the segmentation results.
+
+Usage:
+  python one_pass_fix.py segmentation_output_folder
+
+  The segmentation_output_folder should contain polygon
+  files (*-features.csv) and gray-scale nucleus probability maps (*_SEG.png)
 """
 
 import sys
