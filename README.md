@@ -20,4 +20,6 @@ This software uses several open source repositories, especially [this one](https
 
 ## Trained model and released segmentation results
 
-We also include a Dockerfile with trained model [here](Dockerfile) and segmentation results we've already generated [here](https://stonybrookmedicine.app.box.com/s/7n9gdy3i6qmm638or7lbxrzzydb1iv9b) with [readme](https://stonybrookmedicine.app.box.com/notes/461635773066?s=7n9gdy3i6qmm638or7lbxrzzydb1iv9b).
+We also include:  
+1. A Dockerfile with trained model [here](Dockerfile)  
+2. Segmentation results we've already generated [here](https://stonybrookmedicine.app.box.com/s/7n9gdy3i6qmm638or7lbxrzzydb1iv9b) with [readme](https://stonybrookmedicine.app.box.com/notes/461635773066?s=7n9gdy3i6qmm638or7lbxrzzydb1iv9b).
