@@ -1,12 +1,13 @@
 # docker container for training and prediction 
 
-## Extracting segmentation mask from segmentation output folder
+## Extracting segmentation mask from output folder
 
-Use extract_patch_segmentation_mask.py to extract segmentation results. 
+Segmentation results are stored in polygon format. To extract segmentation as a numpy array mask, please use extract_patch_segmentation_mask.py:
 
 ```python
 from extract_patch_segmentation_mask import extract_segmentation_mask
 
+# Provide the output folder path, <x, y>, and patch_width of the location you want to extract mask from.
 mask = extract_segmentation_mask(segmentation_polygon_folder, x, y, patch_width)
 ```
 
