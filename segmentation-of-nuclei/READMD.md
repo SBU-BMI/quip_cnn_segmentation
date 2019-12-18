@@ -1,5 +1,11 @@
 # docker container for training and prediction 
 
+## Extracting segmentation
+
+Use extract_patch_segmentation_mask.py to extract segmentation results. 
+
+We have released segmentation results for over 6,000 WSIs in 14 cancer types under https://stonybrookmedicine.box.com/s/7n9gdy3i6qmm638or7lbxrzzydb1iv9b. Note that segmentation in COAD, READ, STAD, and UVM are suboptimal.
+
 ## Prediction (Segmentation)
 
 Run the container as:
