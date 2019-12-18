@@ -20,4 +20,4 @@ This software uses several open source repositories, especially [this one](https
 
 ## Trained model and released segmentation results
 
-We also include a Dockerfile with trained model [here](Dockerfile) and segmentation results we already ran [here](segmentation-of-nuclei/READMD.md)
+We also include a Dockerfile with trained model [here](Dockerfile) and segmentation results we've already generated [here](segmentation-of-nuclei/READMD.md).
