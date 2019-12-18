@@ -1,6 +1,6 @@
 # docker container for training and prediction 
 
-## Extracting segmentation mask
+## Extracting segmentation mask from segmentation output folder
 
 Use extract_patch_segmentation_mask.py to extract segmentation results. 
 
