@@ -17,13 +17,17 @@ We have released segmentation results (a bunch of segmentation_polygon_folder) f
 
 Run the container as:
 
-nvidia-docker run --name quip-segmentation -itd -v /<host-data-folder>:/data/wsi_seg_local_data \ 
-	-e CUDA_VISIBLE_DEVICES=<GPU id> -e NPROCS=<# CPU cores for watershed processing> \
-	quip_cnn_segmentation run_wsi_seg.sh
+```sh
+nvidia-docker run --name quip-segmentation -itd \
+  -v /<host-data-folder>:/data/wsi_seg_local_data \
+  -e CUDA_VISIBLE_DEVICES=${GPU_ID} \
+  -e NPROCS=${num_cpu_cores_for_watershed_processing} \
+  quip_cnn_segmentation run_wsi_seg.sh
+```
 
-<host-folder> should have a "svs" subfolder. Input images should be in the svs subfolder. 
+You `host-folder` should have an `svs` subfolder. Input images should be in the svs subfolder. 
 
--v /<host-data-folder>:/data/wsi_seg_local_data will map the <host-folder> on the host to the 
+Argument `-v /<host-data-folder>:/data/wsi_seg_local_data` maps the `host-folder` on the host to the 
 local folder in the container. The segmentation run will create two output folders: 
 
 ```
@@ -59,5 +63,6 @@ The real and initial synthetic nuclear masks (uint8 png file) for training must 
 Therefore pixel values in mask files range from 0 to 5. Check out the dummy data in ./data/nuclei/mask/ as examples. 
 
 Once you have training data, just run:  
+```sh
 CUDA_VISIBLE_DEVICES=2 nohup python -u main.py &> log.train.txt & 
-
+```
