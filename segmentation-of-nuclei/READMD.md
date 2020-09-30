@@ -32,8 +32,7 @@ local folder in the container. The segmentation run will create two output folde
 
 ```
 /<host-data-folder>/logs (/data/wsi_seg_local_data/logs): log files are stored in this folder.
-/<host-data-folder>/seg_tiles (/data/wsi_seg_local_data/seg_tiles): segmentation output is stored 
-in this folder
+/<host-data-folder>/seg_tiles (/data/wsi_seg_local_data/seg_tiles): segmentation output is stored in this folder.
 ```
 
 The docker container does everything: tiling, detection and segmentation, csv and json file generation.
