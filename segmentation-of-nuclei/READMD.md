@@ -19,7 +19,7 @@ Run the container as:
 
 ```sh
 nvidia-docker run --name quip-segmentation -itd \
-  -v /<host-data-folder>:/data/wsi_seg_local_data \
+  -v /<host-folder>:/data/wsi_seg_local_data \
   -e CUDA_VISIBLE_DEVICES=${GPU_ID} \
   -e NPROCS=${num_cpu_cores_for_watershed_processing} \
   quip_cnn_segmentation run_wsi_seg.sh
@@ -27,12 +27,12 @@ nvidia-docker run --name quip-segmentation -itd \
 
 You `host-folder` should have an `svs` subfolder. Input images should be in the svs subfolder. 
 
-Argument `-v /<host-data-folder>:/data/wsi_seg_local_data` maps the `host-folder` on the host to the 
+Argument `-v /<host-folder>:/data/wsi_seg_local_data` maps the `host-folder` on the host to the 
 local folder in the container. The segmentation run will create two output folders: 
 
 ```
-/<host-data-folder>/logs (/data/wsi_seg_local_data/logs): log files are stored in this folder.
-/<host-data-folder>/seg_tiles (/data/wsi_seg_local_data/seg_tiles): segmentation output is stored in this folder.
+/<host-folder>/logs (/data/wsi_seg_local_data/logs): log files are stored in this folder.
+/<host-folder>/seg_tiles (/data/wsi_seg_local_data/seg_tiles): segmentation output is stored in this folder.
 ```
 
 The docker container does everything: tiling, detection and segmentation, csv and json file generation.
