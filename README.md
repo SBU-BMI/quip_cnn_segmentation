@@ -1,7 +1,11 @@
 # Nuclear image synthesis and segmentation code
 
 This repository contains source code for the following paper:  
-Robust Histopathology Image Analysis: to Label or to Synthesize? Hou, Le and Agarwal, Ayush and Samaras, Dimitris and Kurc, Tahsin M and Gupta, Rajarsi R and Saltz, Joel H. Computer Vision and Pattern Recognition (CVPR), 2019  
+Robust Histopathology Image Analysis: to Label or to Synthesize? Hou, Le and Agarwal, Ayush and Samaras, Dimitris and Kurc, Tahsin M and Gupta, Rajarsi R and Saltz, Joel H. Computer Vision and Pattern Recognition (CVPR), 2019
+
+The codes have been used to generate the datasets published in the following paper: 
+
+Le Hou, Rajarsi Gupta, John S. Van Arnam, Yuwei Zhang, Kaustubh Sivalenka, Dimitris Samaras, Tahsin M. Kurc, and Joel H. Saltz. Dataset of segmented nuclei in hematoxylin and eosin stained histopathology images of ten cancer types. Sci Data 7, 185 (2020). https://doi.org/10.1038/s41597-020-0528-1
 
 You need the following python2 libraries to run this software:  
 ```
