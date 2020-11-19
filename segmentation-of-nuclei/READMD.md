@@ -8,7 +8,7 @@ Segmentation results are stored in polygon format. To extract segmentation as a 
 from extract_patch_segmentation_mask import extract_segmentation_mask
 
 # Provide the output folder path, <x, y>, and patch_width of the location you want to extract mask from.
-mask = extract_segmentation_mask(segmentation_polygon_folder, x, y, patch_width)
+mask = extract_segmentation_mask(segmentation_polygon_folder, x, y, patch_width, scale_to_40X=True)
 ```
 
 We have released segmentation results (a bunch of segmentation_polygon_folder) for over 6,000 WSIs in 14 cancer types under [this box folder](https://stonybrookmedicine.box.com/s/7n9gdy3i6qmm638or7lbxrzzydb1iv9b). Note that segmentation in COAD, READ, STAD, and UVM are suboptimal.
