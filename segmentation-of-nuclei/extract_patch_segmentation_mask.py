@@ -58,7 +58,7 @@ def patch_xy2mask(patch_xy, scale_to_40X=True):
     return np.array(mask)
 
 def extract_segmentation_mask(
-        segmentation_polygon_folder, x, y, patch_width):
+        segmentation_polygon_folder, x, y, patch_width, scale_to_40X=True):
 '''
   Extract segmentation mask
 
@@ -72,5 +72,5 @@ def extract_segmentation_mask(
 '''
 
     patch_xy = info2patch_xy(
-            segmentation_polygon_folder, x, y, patch_width)
+            segmentation_polygon_folder, x, y, patch_width, scale_to_40X)
     return patch_xy2mask(patch_xy)
