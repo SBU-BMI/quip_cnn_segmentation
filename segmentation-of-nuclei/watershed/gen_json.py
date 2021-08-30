@@ -2,6 +2,19 @@ import json
 import os
 import collections
 import sys
+import datetime
+
+dict_version = {};
+dict_version['git_remote'] = os.environ.get('GIT_REMOTE')
+dict_version['git_branch'] = os.environ.get('GIT_BRANCH')
+dict_version['git_commit'] = os.environ.get('GIT_COMMIT')
+dict_version['model_path'] = os.environ.get('MODEL_PATH')
+dict_version['model_hash'] = os.environ.get('MODEL_HASH')
+dict_version['model_url']  = os.environ.get('MODEL_URL')
+dict_version['model_ver']  = os.environ.get('MODEL_VER')
+
+analysis_id = 'CNN_synthetic_n_real_'+os.environ.get('SEG_VERSION')
+analysis_execution_date = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
 
 def gen_meta_json(in_path, image_id, wsi_width, wsi_height, method_description,
         seg_thres, det_thres, win_size, min_nucleus_size, max_nucleus_size):
@@ -37,7 +50,9 @@ def gen_meta_json(in_path, image_id, wsi_width, wsi_height, method_description,
     dict_model['out_file_prefix'] = file_id
     dict_model['subject_id'] = image_id
     dict_model['case_id'] = image_id
-    dict_model['analysis_id'] = 'CNN_synthetic_n_real'
+    dict_model['analysis_id'] = analysis_id 
+    dict_model['analysis_execution_date'] = analysis_execution_date
+    dict_model['version'] = dict_version
     dict_model['analysis_desc'] = '{}_{}_{}_{}_{}_{}'.format(
             method_description, seg_thres, det_thres, win_size, min_nucleus_size, max_nucleus_size)
 

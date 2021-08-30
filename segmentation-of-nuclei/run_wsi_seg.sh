@@ -46,6 +46,14 @@ OUTPUT_F=${LOCAL_DATA_ROOT}/seg_tiles/
 LOG_F=${LOCAL_DATA_ROOT}/logs/
 mkdir -p ${INPUT_F} ${OUTPUT_F} ${LOG_F}
 
+# VERSION INFO
+export MODEL_PATH="/root/quip_cnn_segmentation/segmentation-of-nuclei/cnn_model/model_trained.tar.gz"
+export MODEL_HASH=$(sha256sum $MODEL_PATH | cut -f 1 -d ' ')
+export SEG_VERSION=$(git show --oneline -s | cut -f 1 -d ' ')":"$MODEL_VER":"$(sha256sum $MODEL_PATH | cut -c1-7)
+export GIT_REMOTE=$(git remote -v | head -n 1 | cut -f 1 -d ' '| cut -f 2)
+export GIT_BRANCH=$(git branch | grep "\*" | cut -f 2 -d ' ')
+export GIT_COMMIT=$(git show | head -n 1 | cut -f 2 -d ' ')
+
 CUDA_VISIBLE_DEVICES=${GPU_ID} \
 python -u main.py \
     --is_train=False \
