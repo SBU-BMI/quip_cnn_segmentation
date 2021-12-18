@@ -103,8 +103,6 @@ class Mask2Image:
             return True, True, True, True, True, True, True, nuc_texture, True;
 
         hed_mean = np.mean(hed[:,:,0]);
-        if hed_mean < -1.33 or hed_mean > -1.1:
-            return False, False, False, False, False, False, False, False, False;
 
         gray = (255 * (hed[:,:,0] - hed[:,:,0].min()) / (hed[:,:,0].max() - hed[:,:,0].min())).astype(np.uint8);
         nuc_color_thr, thresholded = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU);
