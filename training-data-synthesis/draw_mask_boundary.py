@@ -21,9 +21,9 @@ def canny_edge_on_mask(imgray):
 
 paths = [f for f in listdir(mask_path) if isfile(join(mask_path, f))];
 for path in paths:
-    if len(path.split('/')[-1].split('mask_')) == 1:
+    if len(path.split(os.path.sep)[-1].split('mask_')) == 1:
         continue;
-    im_no = path.split('/')[-1].split('mask_')[1].split('.png')[0];
+    im_no = path.split(os.path.sep)[-1].split('mask_')[1].split('.png')[0];
 
     mask = np.array(Image.open(join(mask_path, path)).convert('L'));
     mask_edge = canny_edge_on_mask(((mask[:,:]>0).astype(np.uint8)*255)).astype(np.float32);

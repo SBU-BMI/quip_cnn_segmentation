@@ -39,7 +39,7 @@ def maybe_preprocess(config, data_path, sample_path=None):
       png0_path = png_path;
       png0 = imread_rgb_image(png0_path);
       real_images.extend(png0[np.newaxis, ...]);
-      png1_path = '/'.join(png_path.split('/')[0:-1]) \
+      png1_path = '/'.join(png_path.split(os.path.sep)[0:-1]) \
               + '/image1_' + png_path.split('_')[-1];
       png1 = imread_rgb_image(png1_path);
       ref_real_images.extend(png1[np.newaxis, ...]);

@@ -1,13 +1,10 @@
 import os
 import numpy as np
 from tqdm import trange
-from tensorflow.contrib.framework.python.ops import arg_scope
 import scipy.stats as st
 import glob
-from scipy import misc
 from PIL import Image
 from skimage import color
-from scipy.misc import imresize
 from layers import normalize
 import sys
 import glob
@@ -18,7 +15,7 @@ from glob import iglob
 from model import Model
 from buffer import Buffer
 import data.nuclei_data as nuclei_data
-from utils import imwrite, imread, img_tile, synthetic_to_refer_paths
+from utils import imwrite, imread, imresize, img_tile, synthetic_to_refer_paths
 from preprocess import stain_normalized_tiling
 from postprocess import MultiProcWatershed
 
@@ -301,7 +298,7 @@ class Trainer(object):
               xy_indices = [];
 
         pred_m /= num_m;
-        pred_m = misc.imresize((pred_m*255).astype(np.uint8), (ori_size1, ori_size0));
+        pred_m = imresize((pred_m*255).astype(np.uint8), (ori_size1, ori_size0));
         imwrite(outf, pred_m);
         #he_outf = os.path.join(outfolder, '{}_{}_{}_{}_{}_{}_HE.png'.format(
         #                                  px, py, pw_x, pw_y, mpp, scale_factor))
