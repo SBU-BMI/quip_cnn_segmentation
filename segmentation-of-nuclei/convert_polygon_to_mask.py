@@ -74,7 +74,7 @@ def process_poly(poly_path):
         path_mkdir(path.join(cancer_type + '_mask', slide))
         mask.save(output_path)
     except:
-        print 'exception for', poly_path
+        print('exception for', poly_path)
 
 poly_paths = glob('*_polygon/*/*-features.csv')
 

@@ -40,7 +40,7 @@ def finish_checker(finishing_queue):
             time.sleep(1)
         else:
             touch(os.path.join(folder, 'finish'))
-            print 'Segmentation finished under {}'.format(folder)
+            print('Segmentation finished under {}'.format(folder))
 
 
 class MultiProcWatershed:
@@ -51,7 +51,7 @@ class MultiProcWatershed:
 
     def start(self):
         self.workers = [Process(target=queue_waiter, args=(i, self.queue,))
-                        for i in xrange(self.n_proc)]
+                        for i in range(self.n_proc)]
         for w in self.workers:
             w.start()
 

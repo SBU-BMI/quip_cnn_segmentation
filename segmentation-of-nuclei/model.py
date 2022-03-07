@@ -394,7 +394,7 @@ class Model(object):
         fetch['output'] = output_op
 
       result = sess.run(fetch, feed_dict=feed_dict)
-      if result.has_key('summary'):
+      if 'summary' in result:
         summary_writer.add_summary(result['summary'], result['step'])
         summary_writer.flush()
       return result

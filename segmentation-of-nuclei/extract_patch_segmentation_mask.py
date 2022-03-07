@@ -59,17 +59,17 @@ def patch_xy2mask(patch_xy, scale_to_40X=True):
 
 def extract_segmentation_mask(
         segmentation_polygon_folder, x, y, patch_width, scale_to_40X=True):
-'''
-  Extract segmentation mask
+    '''
+    Extract segmentation mask
 
-  Args:
-    segmentation_polygon_folder: path to a segmentation output folder.
-    x: x coordinate of the patch you want to extract.
-    y: y coordinate of the patch.
-    patch_width: size of the patch.
-  Returns:
-    Instance-level mask as numpy array.
-'''
+    Args:
+        segmentation_polygon_folder: path to a segmentation output folder.
+        x: x coordinate of the patch you want to extract.
+        y: y coordinate of the patch.
+        patch_width: size of the patch.
+    Returns:
+        Instance-level mask as numpy array.
+    '''
 
     patch_xy = info2patch_xy(
             segmentation_polygon_folder, x, y, patch_width)

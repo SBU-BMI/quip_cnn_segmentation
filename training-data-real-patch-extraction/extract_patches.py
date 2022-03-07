@@ -32,7 +32,7 @@ for filename in os.listdir('MoNuSeg Training Data/Annotations/'):
 
 
 for id in ids:
-    print 'converting xml to png. {}'.format(id)
+    print('converting xml to png. {}'.format(id))
 
     tissue = Image.open('MoNuSeg Training Data/Tissue images/{}.tif'.format(id))
     s0, s1 = tissue.size[0], tissue.size[1]
@@ -56,18 +56,18 @@ for id in ids:
 
 
 for id in ids:
-    print 'extracting patches from png. {}'.format(id)
+    print('extracting patches from png. {}'.format(id))
 
     he_image = np.array(Image.open('MoNuSeg Training Data/Tissue images/{}.tif'.format(id)).convert('RGB'))[15:-15, 15:-15, :]
     seg_gt = misc.imread('MoNuSeg Training Data/Mask/{}.png'.format(id))[15:-15, 15:-15] / 40
 
-    for x in range(0, he_image.shape[0]-win_size, stride) + [he_image.shape[0]-win_size,]:
-        for y in range(0, he_image.shape[1]-win_size, stride) + [he_image.shape[1]-win_size,]:
+    for x in list(range(0, he_image.shape[0]-win_size, stride)) + [he_image.shape[0]-win_size,]:
+        for y in list(range(0, he_image.shape[1]-win_size, stride)) + [he_image.shape[1]-win_size,]:
             he = he_image[x:x+win_size, y:y+win_size, :]
             seg = seg_gt[x:x+win_size, y:y+win_size]
             if he.shape[0] != win_size or he.shape[1] != win_size or \
                 seg.shape[0] != win_size or seg.shape[1] != win_size:
-                print 'some shape error', he.shape, seg.shape
+                print('some shape error', he.shape, seg.shape)
                 continue
             misc.imsave('real_data_400x400/image_sup/{}.png'.format(patch_id), he)
             misc.imsave('real_data_400x400/mask_sup/{}.png'.format(patch_id), seg)

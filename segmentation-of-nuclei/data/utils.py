@@ -91,8 +91,8 @@ def img_tile(imgs, aspect_ratio=1.0, tile_shape=None, border=1,
 def save_config(model_dir, config):
   param_path = os.path.join(model_dir, "params.json")
 
-  print("[*] MODEL dir: %s" % model_dir)
-  print("[*] PARAM path: %s" % param_path)
+  print(("[*] MODEL dir: %s" % model_dir))
+  print(("[*] PARAM path: %s" % param_path))
 
   with open(param_path, 'w') as fp:
     json.dump(config.__dict__, fp,  indent=4, sort_keys=True)

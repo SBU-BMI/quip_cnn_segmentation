@@ -70,7 +70,7 @@ def fix_probability_map_png(in_folder):
         im.save(fn)
 
 if len(sys.argv) != 2:
-    print('Usage: python {} segmentation_folder'.format(sys.argv[0]))
+    print(('Usage: python {} segmentation_folder'.format(sys.argv[0])))
     exit(1)
 in_folder = sys.argv[1]
 fix_polygon_csv(in_folder)

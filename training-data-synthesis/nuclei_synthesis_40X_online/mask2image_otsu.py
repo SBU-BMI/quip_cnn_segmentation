@@ -6,7 +6,7 @@ from skimage.color import hed2rgb, rgb2hed
 from os import listdir
 from sys import stdout
 from os.path import isfile, join
-from my_canny import canny_edge_on_mask
+from .my_canny import canny_edge_on_mask
 from scipy import ndimage
 from scipy import stats
 

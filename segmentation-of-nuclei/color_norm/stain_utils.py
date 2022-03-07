@@ -6,7 +6,7 @@ http://spams-devel.gforge.inria.fr/index.html
 Use with python via e.g https://anaconda.org/conda-forge/python-spams
 """
 
-from __future__ import division
+
 
 import numpy as np
 
