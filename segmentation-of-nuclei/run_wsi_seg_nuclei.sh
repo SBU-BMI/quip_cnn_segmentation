@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source ../env.sh
+
 ################################
 # GPU used for the CNN. If you have 4 GPUs, GPU_ID could be 0, 1, 2, or 3
 # Check your GPU availability using nvidia-smi
@@ -39,7 +41,7 @@ DO_CPU_POSTPROCESS=True
 
 # The root of all of your data
 # WSIs, log files, and outputs will be stored under this folder
-LOCAL_DATA_ROOT=/data/wsi_seg_local_data
+LOCAL_DATA_ROOT=${OUT_DIR}
 
 INPUT_F=${LOCAL_DATA_ROOT}/svs/
 OUTPUT_F=${LOCAL_DATA_ROOT}/seg_tiles/
@@ -47,7 +49,7 @@ LOG_F=${LOCAL_DATA_ROOT}/logs/
 mkdir -p ${INPUT_F} ${OUTPUT_F} ${LOG_F}
 
 # VERSION INFO
-export MODEL_PATH="/root/quip_cnn_segmentation/segmentation-of-nuclei/cnn_model/model_trained.tar.gz"
+export MODEL_PATH="${APP_DIR}/segmentation-of-nuclei/cnn_model/model_trained.tar.gz"
 export MODEL_HASH=$(sha256sum $MODEL_PATH | cut -f 1 -d ' ')
 export SEG_VERSION=$(git show --oneline -s | cut -f 1 -d ' ')":"$MODEL_VER":"$(sha256sum $MODEL_PATH | cut -c1-7)
 export GIT_REMOTE=$(git remote -v | head -n 1 | cut -f 1 -d ' '| cut -f 2)
