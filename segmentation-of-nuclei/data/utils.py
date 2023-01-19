@@ -98,14 +98,14 @@ def save_config(model_dir, config):
     json.dump(config.__dict__, fp,  indent=4, sort_keys=True)
 
 def synthetic_to_refer_paths(paths, config):
-  return ['/'.join(x.split('/')[:-2]) + '/' + \
-          config.synthetic_refer_dir + '/' + x.split('/')[-1] for x in paths];
+  return ['/'.join(x.split(os.path.sep)[:-2]) + '/' + \
+          config.synthetic_refer_dir + '/' + x.split(os.path.sep)[-1] for x in paths];
 
 def synthetic_to_ground_truth_paths(paths, config):
-  return ['/'.join(x.split('/')[:-2]) + '/' + \
-          config.synthetic_gt_dir + '/' + x.split('/')[-1] for x in paths];
+  return ['/'.join(x.split(os.path.sep)[:-2]) + '/' + \
+          config.synthetic_gt_dir + '/' + x.split(os.path.sep)[-1] for x in paths];
 
 def supervised_to_ground_truth_paths(paths, config):
-  return ['/'.join(x.split('/')[:-2]) + '/' + \
-          config.synthetic_mask_sup_dir + '/' + x.split('/')[-1] for x in paths];
+  return ['/'.join(x.split(os.path.sep)[:-2]) + '/' + \
+          config.synthetic_mask_sup_dir + '/' + x.split(os.path.sep)[-1] for x in paths];
 
