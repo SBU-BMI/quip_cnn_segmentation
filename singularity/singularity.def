@@ -1,0 +1,26 @@
+BootStrap: docker
+From: tensorflow/tensorflow:1.14.0-gpu
+
+%files
+	../ /quip_app/quip_cnn_segmentation/
+
+%post
+	apt-key del 7fa2af80
+	apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub
+	apt-get -y update 
+        apt-get -y install git python-pip openslide-tools wget libsm6 git vim rsync
+        pip install openslide-python scikit-image scipy numpy opencv-python==4.2.0.32 tqdm 
+	export BASE_DIR="/quip_app/quip_cnn_segmentation" 
+	cd ${BASE_DIR}/segmentation-of-nuclei/cnn_model 
+	tar -xzvf model_trained.tar.gz 
+        chmod -R 0755 /quip_app 
+	
+%environment
+	export BASE_DIR="/quip_app/quip_cnn_segmentation"
+	export PATH="/usr/local/bin:./":$PATH
+	export MODEL_URL="https://github.com/SBU-BMI/quip_cnn_segmentation/blob/master/segmentation-of-nuclei/cnn_model/model_trained.tar.gz"
+	export MODEL_VER="v1.0"
+
+%runscript
+	cd ${BASE_DIR}
+	exec "$@"

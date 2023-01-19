@@ -224,8 +224,11 @@ class Trainer(object):
     def get_image_id(svs_path, delimitor='.'):
       return os.path.basename(svs_path).split(delimitor)[0]
 
-    svs_list = [(f, get_image_id(f)) for f in iglob(self.seg_path + '/*.svs') if os.path.isfile(f)]
-    tif_list = [(f, get_image_id(f)) for f in iglob(self.seg_path + '/*.tif') if os.path.isfile(f)]
+#    svs_list = [(f, get_image_id(f)) for f in iglob(self.seg_path + '/*.svs') if os.path.isfile(f)]
+#    tif_list = [(f, get_image_id(f)) for f in iglob(self.seg_path + '/*.tif') if os.path.isfile(f)]
+
+    tif_list = []
+    svs_list = [(f, get_image_id(f)) for f in iglob(self.seg_path + '/*') if os.path.isfile(f)]
 
     if self.do_cpu_postprocess:
       self.watershed_manager = MultiProcWatershed(n_proc=self.postprocess_nproc)
