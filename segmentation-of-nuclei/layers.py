@@ -85,10 +85,10 @@ def resnet_block(
        inputs.get_shape()[3] == layer.get_shape()[3]:
       outputs = tf.add(inputs, layer)
     else:
-      print "Cannot tf.add: shapes do not match {}-{} {}-{} {}-{}".format(
+      print("Cannot tf.add: shapes do not match {}-{} {}-{} {}-{}".format(
               inputs.get_shape()[1], layer.get_shape()[1],
               inputs.get_shape()[2], layer.get_shape()[2],
-              inputs.get_shape()[3], layer.get_shape()[3]);
+              inputs.get_shape()[3], layer.get_shape()[3]));
       outputs = layer;
 
   _update_dict(layer_dict, scope, outputs)

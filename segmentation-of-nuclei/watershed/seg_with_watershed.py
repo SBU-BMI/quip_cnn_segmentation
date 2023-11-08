@@ -8,8 +8,8 @@ from skimage.morphology import watershed
 from skimage.color import label2rgb
 import time
 
-import detection_binarize
-from gen_json import gen_meta_json
+from . import detection_binarize
+from .gen_json import gen_meta_json
 
 def apply_segmentation(in_path, image_id, wsi_width, wsi_height, method_description,
         seg_thres=0.33, det_thres=0.07, win_size=200, min_nucleus_size=20, max_nucleus_size=65536):
@@ -70,7 +70,7 @@ def apply_segmentation(in_path, image_id, wsi_width, wsi_height, method_descript
 
         return det_seg[..., 0], det_seg[..., 1]
 
-    print "Watershed postprocessing on", in_path
+    print("Watershed postprocessing on", in_path)
 
     file_id = os.path.basename(in_path)[:-len('_SEG.png')]
     resize_factor = int(file_id.split('_')[5])
@@ -122,7 +122,7 @@ def apply_segmentation(in_path, image_id, wsi_width, wsi_height, method_descript
 
     time3 = time.time()
 
-    print "Time in watershed for ",in_path," Padding/Seed: ",(time1-time0)," Watershed: ",(time2-time1)," Fillholes: ",(time3-time2)
+    print("Time in watershed for ",in_path," Padding/Seed: ",(time1-time0)," Watershed: ",(time2-time1)," Fillholes: ",(time3-time2))
 
     gen_meta_json(in_path, image_id, wsi_width, wsi_height, method_description,
             seg_thres, det_thres, win_size, min_nucleus_size, max_nucleus_size)

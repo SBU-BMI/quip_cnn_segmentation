@@ -1,4 +1,4 @@
-import stainNorm_Reinhard
+from . import stainNorm_Reinhard
 from scipy import misc
 
 class reinhard_normalizer():

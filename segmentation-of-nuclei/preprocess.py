@@ -41,7 +41,7 @@ def stain_normalized_tiling(slide_name, patch_size, do_actually_read_image=True)
         width = oslide.dimensions[0]
         height = oslide.dimensions[1]
     except:
-        print 'Error in {}: exception caught exiting'.format(slide_name)
+        print('Error in {}: exception caught exiting'.format(slide_name))
         raise Exception('{}: exception caught exiting'.format(slide_name))
         return
 
@@ -65,7 +65,7 @@ def stain_normalized_tiling(slide_name, patch_size, do_actually_read_image=True)
                 try:
                     patch = oslide.read_region((x, y), 0, (pw_x, pw_y)).convert('RGB')
                 except:
-                    print '{}: exception caught'.format(slide_name)
+                    print('{}: exception caught'.format(slide_name))
                     continue
             else:
                 patch = Image.new('RGB', (pw_x, pw_y), (255, 255, 255))

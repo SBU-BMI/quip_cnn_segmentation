@@ -21,6 +21,7 @@ import data.nuclei_data as nuclei_data
 from utils import imwrite, imread, img_tile, synthetic_to_refer_paths
 from preprocess import stain_normalized_tiling
 from postprocess import MultiProcWatershed
+from functools import reduce
 
 class Trainer(object):
   def __init__(self, config, rng):
@@ -169,7 +170,7 @@ class Trainer(object):
 
     def train_discrim():
       a, b, c = self.history_buffer.sample()
-      d, e = self.data_loader.next()
+      d, e = next(self.data_loader)
 
       feed_dict = {
         self.model.synthetic_batch_size: self.data_loader.batch_size/2,
@@ -203,21 +204,21 @@ class Trainer(object):
       train_discrim()
 
     for step in trange(self.max_step_d_g, desc="Train refiner+discrim"):
-      for k in xrange(self.K_g):
+      for k in range(self.K_g):
         train_refiner(push_buffer=True)
 
-      for k in xrange(self.K_d):
+      for k in range(self.K_d):
         train_discrim()
 
     for k in trange(self.initial_K_l, desc="Train learner"):
       train_learner()
 
     for step in trange(self.max_step_d_g_l, desc="Train all Three"):
-      for k in xrange(self.K_g):
+      for k in range(self.K_g):
         train_refiner(push_buffer=True)
-      for k in xrange(self.K_l):
+      for k in range(self.K_l):
         train_learner()
-      for k in xrange(self.K_d):
+      for k in range(self.K_d):
         train_discrim()
 
     for k in trange(self.after_K_l, desc="Train learner"):
@@ -241,8 +242,8 @@ class Trainer(object):
       try:
         self.cnn_pred_mask(wsi, image_id)
       except Exception as e:
-        print traceback.format_exc()
-        print 'Segmentation failed for {}'.format(wsi)
+        print(traceback.format_exc())
+        print('Segmentation failed for {}'.format(wsi))
         continue
 
     if self.do_cpu_postprocess:
@@ -273,15 +274,15 @@ class Trainer(object):
 
       # Check if skip the CNN step
       if self.do_gpu_process:
-        print "CNN segmentation on", outf
+        print("CNN segmentation on", outf)
 
         pred_m = np.zeros((patch.shape[0], patch.shape[1], 3), dtype=np.float32);
         num_m = np.zeros((patch.shape[0], patch.shape[1], 1), dtype=np.float32) + 4e-6;
 
         net_inputs = [];
         xy_indices = [];
-        for x in range(0, pred_m.shape[0]-PS+1, step_size) + [pred_m.shape[0]-PS,]:
-          for y in range(0, pred_m.shape[1]-PS+1, step_size) + [pred_m.shape[1]-PS,]:
+        for x in list(range(0, pred_m.shape[0]-PS+1, step_size)) + [pred_m.shape[0]-PS,]:
+          for y in list(range(0, pred_m.shape[1]-PS+1, step_size)) + [pred_m.shape[1]-PS,]:
             pat = patch[x:x+PS, y:y+PS, :]
             wh = pat[...,0].std() + pat[...,1].std() + pat[...,2].std();
             if wh >= 0.18:

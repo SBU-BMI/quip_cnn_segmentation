@@ -1,9 +1,9 @@
 import numpy as np
 import pickle
-import png
+from . import png
 from PIL import Image, ImageDraw
-from polygon import generatePolygon
-from mask2image_otsu import Mask2Image
+from .polygon import generatePolygon
+from .mask2image_otsu import Mask2Image
 from scipy import ndimage
 from sys import stdout
 

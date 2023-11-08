@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 import numpy as np
 
-from utils import imread, imwrite
+from .utils import imread, imwrite
 
 DATA_FNAME = 'real_pair.npz'
 
@@ -56,7 +56,7 @@ def maybe_preprocess(config, data_path, sample_path=None):
 
 def load(config, data_path, sample_path, rng):
   if not os.path.exists(data_path):
-    print('creating folder', data_path)
+    print(('creating folder', data_path))
     os.makedirs(data_path)
 
   synthetic_image_path = maybe_preprocess(config, data_path, sample_path)
@@ -69,7 +69,7 @@ def load(config, data_path, sample_path, rng):
   if not os.path.exists(sample_path):
     os.makedirs(sample_path)
 
-  print("[*] Save samples images in {}".format(data_path))
+  print(("[*] Save samples images in {}".format(data_path)))
   random_idxs = rng.choice(len(real_data), 100)
   for idx, random_idx in enumerate(random_idxs):
     image_path = os.path.join(sample_path, "real_{}.png".format(idx))

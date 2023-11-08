@@ -12,7 +12,7 @@ while im_no < 25000:
     try:
         image, mask, detect, contour, refer, source, nucl, cyto, intp_mask, tile_path = get_new_fake_image();
     except Exception as e:
-        print e;
+        print(e);
         continue;
     mask = (mask>0).astype(np.uint8);
     detect = (detect>0).astype(np.uint8);
